@@ -8,13 +8,17 @@
 
 ## 2. Stack tecnológico
 
-| Capa            | Tecnología                          | Estado en etapa 1        |
-|-----------------|-------------------------------------|--------------------------|
-| Backend         | Node.js + Express                   | ✅ Scaffold creado       |
-| Frontend        | React + Vite                        | ✅ Scaffold creado       |
-| Base de datos   | MySQL + Sequelize.js                | ⏳ Deps instaladas       |
-| Autenticación   | JWT + bcrypt                        | ⏳ Deps instaladas       |
-| Contenedores    | Docker + Docker Compose             | ⏳ Etapa posterior       |
+
+| Capa          | Tecnología                  | Estado en etapa 1 |
+| ------------- | --------------------------- | ----------------- |
+| Backend       | Node.js + Express           | ✅ Scaffold creado |
+| Frontend      | React + Vite + localStorage | ✅ Scaffold creado |
+| Base de datos | MySQL + Sequelize.js        | ⏳ Deps instaladas |
+| Autenticación | JWT + bcrypt                | ⏳ Deps instaladas |
+| Contenedores  | Docker + Docker Compose     | ⏳ Etapa posterior |
+
+
+
 
 ## 3. Estructura del repositorio
 
@@ -47,7 +51,11 @@ FocusMind/
 └── README.md
 ```
 
+
+
 ## 4. Decisiones técnicas
+
+
 
 ### 4.1 Monorepo simple (sin herramienta de workspaces)
 
@@ -89,13 +97,17 @@ FocusMind/
 
 Las siguientes librerías están en `backend/package.json` listas para la etapa 2, sin código de configuración aún:
 
-| Paquete       | Uso previsto                          |
-|---------------|---------------------------------------|
-| `sequelize`   | ORM para MySQL                        |
-| `mysql2`      | Driver de MySQL para Sequelize        |
-| `jsonwebtoken`| Emisión y verificación de tokens JWT  |
-| `bcrypt`      | Hash de contraseñas                   |
-| `dotenv`      | Variables de entorno                  |
+
+| Paquete        | Uso previsto                         |
+| -------------- | ------------------------------------ |
+| `sequelize`    | ORM para MySQL                       |
+| `mysql2`       | Driver de MySQL para Sequelize       |
+| `jsonwebtoken` | Emisión y verificación de tokens JWT |
+| `bcrypt`       | Hash de contraseñas                  |
+| `dotenv`       | Variables de entorno                 |
+
+
+
 
 ### 4.8 Sin librerías adicionales en frontend
 
@@ -111,27 +123,39 @@ Las siguientes librerías están en `backend/package.json` listas para la etapa 
 
 ## 5. Variables de entorno
 
+
+
 ### Backend (`backend/.env.example`)
 
-| Variable         | Descripción                    | Valor por defecto |
-|------------------|--------------------------------|-------------------|
-| `PORT`           | Puerto del servidor            | `3001`            |
-| `NODE_ENV`       | Entorno de ejecución           | `development`     |
-| `DB_HOST`        | Host de MySQL                  | `localhost`       |
-| `DB_PORT`        | Puerto de MySQL                | `3306`            |
-| `DB_NAME`        | Nombre de la base de datos     | `focusmind`       |
-| `DB_USER`        | Usuario de MySQL               | `focusmind`       |
-| `DB_PASSWORD`    | Contraseña de MySQL            | —                 |
-| `JWT_SECRET`     | Secreto para firmar tokens     | —                 |
-| `JWT_EXPIRES_IN` | Expiración del token           | `7d`              |
+
+| Variable         | Descripción                | Valor por defecto |
+| ---------------- | -------------------------- | ----------------- |
+| `PORT`           | Puerto del servidor        | `3001`            |
+| `NODE_ENV`       | Entorno de ejecución       | `development`     |
+| `DB_HOST`        | Host de MySQL              | `localhost`       |
+| `DB_PORT`        | Puerto de MySQL            | `3306`            |
+| `DB_NAME`        | Nombre de la base de datos | `focusmind`       |
+| `DB_USER`        | Usuario de MySQL           | `focusmind`       |
+| `DB_PASSWORD`    | Contraseña de MySQL        | —                 |
+| `JWT_SECRET`     | Secreto para firmar tokens | —                 |
+| `JWT_EXPIRES_IN` | Expiración del token       | `7d`              |
+
+
+
 
 ### Frontend (`frontend/.env.example`)
 
-| Variable        | Descripción              | Valor por defecto        |
-|-----------------|--------------------------|--------------------------|
-| `VITE_API_URL`  | URL base del API backend | `http://localhost:3001`  |
+
+| Variable       | Descripción              | Valor por defecto       |
+| -------------- | ------------------------ | ----------------------- |
+| `VITE_API_URL` | URL base del API backend | `http://localhost:3001` |
+
+
+
 
 ## 6. Scripts disponibles
+
+
 
 ### Backend
 
@@ -141,6 +165,8 @@ npm run dev      # Desarrollo con nodemon
 npm start        # Producción
 ```
 
+
+
 ### Frontend
 
 ```bash
@@ -149,6 +175,8 @@ npm run dev      # Servidor de desarrollo Vite
 npm run build    # Build de producción
 npm run preview  # Preview del build
 ```
+
+
 
 ## 7. Próximas etapas (fuera de alcance actual)
 
@@ -160,8 +188,11 @@ npm run preview  # Preview del build
 6. Docker Compose (backend + frontend + MySQL)
 7. Proxy de desarrollo en Vite hacia el API
 
+
+
 ## 8. Requisitos del entorno
 
 - **Node.js:** v18+ (probado con v24.16.0)
 - **npm:** v9+ (probado con v11.13.0)
 - **MySQL:** 8.x (requerido a partir de etapa 2)
+
