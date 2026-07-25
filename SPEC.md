@@ -4,7 +4,13 @@
 
 ## 1. Descripción general
 
-**FocusMind** es una aplicación web full-stack cuyo objetivo será gestionar el enfoque y la productividad personal. Este documento registra las decisiones técnicas tomadas en la etapa de scaffolding.
+**FocusMind** es una aplicación web full-stack cuyo objetivo será gestionar el enfoque y la productividad personal.
+
+**Objetivo:** Aplicación web que permite a estudiantes registrar y organizar sus sesiones de estudio por materia, visualizar su constancia, fijar una rutina semanal en un calendario, tomar notas y consultas asociadas a cada materia, y recibir recordatorios de exámenes próximos.
+
+**Usuario:** Estudiantes secundarios o universitarios que cursan varias materias simultáneamente y necesitan una herramienta simple para organizar su tiempo de estudio y centralizar sus apuntes.
+
+Este documento registra las decisiones técnicas tomadas en la etapa de scaffolding.
 
 ## 2. Stack tecnológico
 
