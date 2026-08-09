@@ -1,155 +1,154 @@
 # AGENTS.md — FocusMind
 
-## 1. Propósito y rol del agente
+## 1. Agent purpose and role
 
-Actuás como **Tech Lead senior con foco en React**, no como un generador genérico de código.
+You act as a **Senior Tech Lead specializing in React**, not as a generic code generator.
 
-- No implementás funcionalidades que no fueron pedidas explícitamente.
-- Consultás `SPEC.md` antes de tomar cualquier decisión técnica.
-- Priorizás simplicidad, escalabilidad y consistencia por sobre soluciones "creativas" o sobredimensionadas.
-- Ante la duda, preguntás antes de asumir.
+- Do not implement features that were not explicitly requested.
+- Consult `SPEC.md` before making any technical decisions.
+- Prioritize simplicity, scalability, and consistency over "creative" or over-engineered solutions.
+- When in doubt, ask rather than make assumptions.
 
-## 2. Contexto del proyecto
+## 2. Project context
 
-**FocusMind** es una aplicación web full-stack que permite a estudiantes registrar y organizar sus sesiones de estudio por materia, fijar una rutina semanal en un calendario, tomar notas y consultas asociadas a cada materia, y recibir recordatorios de exámenes próximos.
+**FocusMind** is a full-stack web application that allows students to log and organize study sessions by subject, set a weekly calendar routine, take notes and track questions related to each subject, and receive reminders for upcoming exams.
 
-**Etapa actual:** Etapa 1 — scaffold de backend y frontend. Sin lógica de negocio implementada todavía.
+**Current stage:** Stage 1 — backend and frontend scaffolding. No business logic implemented yet.
 
-**Stack confirmado vs. pendiente:**
+**Confirmed vs. pending stack:**
 
-| Capa | Tecnología | Estado |
+| Layer | Technology | Status |
 |---|---|---|
-| Backend | Node.js + Express | ✅ Scaffold creado |
-| Frontend | React + Vite | ✅ Scaffold creado |
-| Base de datos | MySQL + Sequelize | ⏳ Deps instaladas, sin configurar |
-| Autenticación | JWT + bcrypt | ⏳ Deps instaladas, sin configurar |
-| Contenedores | Docker + Docker Compose | ⏳ Diferido a etapa posterior |
+| Server | Node.js + Express | ✅ Scaffold created |
+| Interface | React + Vite | ✅ Scaffold created |
+| Database | MySQL + Sequelize | ⏳ Deps installed, not configured |
+| Authentication | JWT + bcrypt | ⏳ Deps installed, not configured |
+| Containers | Docker + Docker Compose | ⏳ Deferred to a later stage |
 
-`SPEC.md` es la fuente de verdad técnica del proyecto. Ante cualquier conflicto entre lo que decís acá y lo que dice `SPEC.md`, gana `SPEC.md`.
+`SPEC.md` is the project's technical source of truth. In the event of any conflict between what is stated here and what `SPEC.md` says, `SPEC.md` takes precedence.
 
-## 3. Alcance y límites de cada tarea
+## 3. Scope and limits of each task
 
-Esta es la sección más importante para evitar sobre-ingeniería. En esta etapa, el mayor riesgo no es escribir mal código, sino escribir de más.
+This is the most important section for avoiding over-engineering. At this stage, the biggest risk is not writing bad code, but writing too much code.
 
-- No agregar librerías sin justificación clara.
-- No crear pantallas finales si la tarea es de infraestructura.
-- No mezclar backend y frontend en la misma tarea, salvo que se pida explícitamente.
-- No implementar auth, base de datos ni Docker hasta que la etapa correspondiente lo indique (ver Roadmap, sección 14).
+- Do not add libraries without clear justification.
+- Do not create final UI screens if the task is infrastructure-related.
+- Do not mix backend and frontend work in the same task unless explicitly requested.
+- Do not implement authentication, databases, or Docker until the corresponding stage calls for it (see Roadmap, section 14).
 
-## 4. Mapa del repositorio y responsabilidades
+## 4. Repository map and responsibilities
 
 ```
 FocusMind/
 ├── backend/
 │   └── src/
-│       ├── config/       # Configuración (DB, JWT, etc.)
-│       ├── controllers/  # Controladores HTTP
-│       ├── middleware/   # Auth, validación, etc.
-│       ├── models/       # Modelos Sequelize
-│       ├── routes/       # Definición de rutas
-│       └── utils/        # Utilidades compartidas
+│       ├── config/       # Configuration (DB, JWT, etc.)
+│       ├── controllers/  # HTTP controllers
+│       ├── middleware/   # Auth, validation, etc.
+│       ├── models/       # Sequelize models
+│       ├── routes/       # Route definitions
+│       └── utils/        # Shared utilities
 └── frontend/
     └── src/
-        ├── components/   # Componentes reutilizables
-        ├── pages/        # Vistas/páginas
-        ├── services/     # Clientes HTTP / API
+        ├── components/   # Reusable components
+        ├── pages/        # Views/pages
+        ├── services/     # HTTP clients / API
         ├── hooks/        # Custom hooks
-        └── utils/        # Utilidades
+        └── utils/        # Utilities
 ```
 
-Reglas de capa:
-- Las llamadas HTTP viven únicamente en `frontend/src/services/`, nunca dentro de componentes.
-- La lógica de negocio del backend vive en `controllers/`, no en `app.js` ni `server.js`.
-- No cruzar responsabilidades entre carpetas (ej.: no poner lógica de UI en `services/`, ni queries de DB en `controllers/` sin pasar por `models/`).
+Layer rules:
+- HTTP calls reside solely in `frontend/src/services/`, never within components.
+- Backend business logic resides in `controllers/`, not in `app.js` or `server.js`.
+- Do not mix responsibilities between folders (e.g., do not put UI logic in `services/`, or DB queries in `controllers/` without going through `models/`).
 
-## 5. Convenciones de frontend (React)
+## 5. Frontend conventions (React)
 
-- Componentes funcionales únicamente.
-- Separación estricta entre UI y lógica (usar `hooks/` y `services/` para lógica, componentes solo para presentación).
-- PascalCase para componentes, camelCase para variables y funciones.
-- Nombres descriptivos, sin abreviaturas ambiguas.
-- Evitar componentes profundamente anidados; extraer a un componente reutilizable cuando la lógica o el JSX se repite, mantener inline cuando es uso único y simple.
-- Manejar explícitamente estados de loading, error y vacío en cualquier vista que consuma datos.
-- Accesibilidad mínima: labels en inputs, roles semánticos, manejo de foco.
-- Evitar `any` (o equivalente) y evitar lógica duplicada entre componentes.
+- Functional components only.
+- Strict separation between UI and logic (use `hooks/` and `services/` for logic; components are for presentation only).
+- PascalCase for components, camelCase for variables and functions.
+- Descriptive names; avoid ambiguous abbreviations.
+- Avoid deeply nested components; extract to a reusable component when logic or JSX repeats, but keep inline for simple, one-off use.
+- Explicitly handle loading, error, and empty states in any view that consumes data.
+- Minimum accessibility: input labels, semantic roles, and focus management.
+- Avoid `any` (or equivalent) and avoid duplicate logic across components.
 
-## 6. Convenciones de integración con API
+## 6. API integration conventions
 
-- Toda comunicación HTTP vive en `frontend/src/services/`.
-- La URL base del API se toma de `VITE_API_URL`, nunca hardcodeada en el código.
-- Las respuestas y errores del backend deben tener un formato consistente y predecible.
-- No hardcodear tokens en componentes ni en `services/`.
-- Cuando exista autenticación (etapa 2), el JWT se maneja fuera del DOM y nunca se loguea en consola.
+- All HTTP communication resides in `frontend/src/services/`.
+- The API base URL is derived from `VITE_API_URL`; never hardcode it in the source code.
+- Backend responses and errors must follow a consistent and predictable format.
+- Do not hardcode tokens in components or `services/`.
+- When authentication is implemented (stage 2), the JWT must be handled outside the DOM and never logged to the console.
 
-## 7. Convenciones de backend (coordinación)
+## 7. Backend conventions (coordination)
 
-- CommonJS (`require`/`module.exports`), sin `"type": "module"`.
-- Flujo de responsabilidad: `routes/` → `controllers/` → `models/`.
-- Sequelize como ORM para MySQL.
-- JWT + bcrypt para autenticación cuando corresponda.
-- Variables de configuración siempre desde `.env`, nunca hardcodeadas.
-- Sin lógica de negocio en `app.js` o `server.js`; esos archivos solo inicializan la app.
+- CommonJS (`require`/`module.exports`); do not use `"type": "module"`.
+- Responsibility flow: `routes/` → `controllers/` → `models/`.
+- Sequelize as the ORM for MySQL.
+- JWT + bcrypt for authentication where applicable.
+- Configuration variables must come from `.env`; never hardcode them.
+- No business logic in `app.js` or `server.js`; these files are solely for app initialization.
 
-## 8. Dependencias y decisiones técnicas
+## 8. Dependencies and technical decisions
 
-- Prohibido agregar librerías sin necesidad clara y justificada.
-- Preferir soluciones nativas o simples antes que frameworks adicionales.
-- Si falta una decisión técnica importante para avanzar → preguntar antes de asumir.
-- Si se toma una decisión técnica nueva → documentarla en `SPEC.md`, no dejarla implícita en el código.
+- Do not add libraries without a clear, justified need.
+- Prefer native or simple solutions over additional frameworks.
+- If a key technical decision is missing to proceed → ask before making assumptions.
+- If a new technical decision is made → document it in `SPEC.md`; do not leave it implicit in the code.
 
-## 9. Calidad, pruebas y verificación
+## 9. Quality, testing, and verification
 
-Antes de dar una tarea por terminada:
-- El código corre sin errores (`npm run dev` en el proyecto correspondiente).
-- El build no se rompe (`npm run build` en frontend, cuando aplique).
-- No queda código muerto ni imports sin usar.
-- No se considera "hecho" una UI visualmente terminada si el flujo funcional detrás no está probado.
-- Tests unitarios/integración: a definir e incorporar quando el proyecto entre en etapa de features core (no requerido en el scaffold actual).
+Before marking a task as complete:
+- The code runs without errors (`npm run dev` in the relevant project).
+- The build does not break (`npm run build` for the frontend, where applicable).
+- There is no dead code or unused imports.
+- A visually finished UI is not considered "done" if the underlying functional flow has not been tested.
+- Unit/integration tests: to be defined and incorporated when the project enters the core feature stage (not required in the current scaffold).
 
-## 10. Git, commits y PRs
+## 10. Git, commits, and PRs
 
-- No hacer commits sin que el usuario lo pida explícitamente.
-- Mensajes de commit claros, orientados al "por qué" del cambio, no solo al "qué".
-- Cambios pequeños y enfocados: no mezclar refactor + feature + infraestructura en un mismo commit o PR.
+- Do not make commits unless explicitly requested by the user.
+- Use clear commit messages focused on the "why" of the change, not just the "what."
+- Keep changes small and focused: do not mix refactoring, features, and infrastructure in the same commit or PR.
 
-## 11. Seguridad y datos sensibles
+## 11. Security and sensitive data
 
-- Nunca commitear archivos `.env`.
-- No exponer secretos ni claves en el frontend.
-- Las contraseñas siempre se guardan hasheadas (bcrypt), nunca en texto plano.
-- Validar todos los inputs en el backend, no confiar solo en validación de frontend.
-- Los tokens (JWT) se mantienen fuera del DOM y fuera de logs/consola.
+- Never commit `.env` files.
+- Do not expose secrets or keys in the frontend.
+- Passwords must always be stored hashed (bcrypt), never in plain text.
+- Validate all inputs on the backend; do not rely solely on frontend validation.
+- Keep tokens (JWTs) out of the DOM and out of logs/console output.
 
-## 12. Flujo de trabajo recomendado
+## 12. Recommended workflow
 
-Para cualquier tarea significativa, el agente debe:
-1. Leer `SPEC.md` antes de empezar.
-2. Confirmar el alcance de la tarea con el usuario.
-3. Identificar qué capa(s) se ven afectadas (frontend, backend, ambas).
-4. Proponer un enfoque mínimo y explicarlo.
-5. Esperar aprobación antes de implementar cambios grandes.
-6. Implementar.
-7. Verificar (correr, buildear, revisar que no rompe nada existente).
-8. Documentar cualquier decisión técnica nueva en `SPEC.md`.
+For any significant task, the agent must:
+1. Read `SPEC.md` before starting.
+2. Confirm the task scope with the user.
+3. Identify which layer(s) are affected (frontend, backend, or both).
+4. Propose a minimal approach and explain it.
+5. Wait for approval before implementing major changes. 6. Implement.
+7. Verify (run, build, check that nothing existing breaks).
+8. Document any new technical decisions in `SPEC.md`.
 
-## 13. Anti-patrones explícitos
+## 13. Explicit anti-patterns
 
-- No meter llamadas `fetch`/`axios` directamente en componentes de UI.
-- No crear pantallas finales durante etapas de scaffold o infraestructura.
-- No duplicar lógica entre frontend y backend.
-- No introducir manejo de estado global (Redux, Zustand, Context complejo) de forma prematura, sin necesidad concreta.
-- No mezclar estilos ad hoc sin un sistema definido.
-- No remover funcionalidades existentes sin aprobación previa.
+- Do not place `fetch`/`axios` calls directly inside UI components.
+- Do not create final screens during the scaffolding or infrastructure stages.
+- Do not duplicate logic between the frontend and backend.
+- Do not introduce global state management (Redux, Zustand, complex Context) prematurely or without a concrete need.
+- Do not mix ad-hoc styles without a defined system.
+- Do not remove existing functionality without prior approval.
 
-## 14. Roadmap y prioridades por etapa
+## 14. Roadmap and priorities by stage
 
-1. **Etapa 1 — Scaffold** ✅ (backend + frontend inicial, sin lógica de negocio)
-2. **Etapa 2 — Base de datos y autenticación** (Sequelize, modelos, migraciones, JWT, registro/login)
-3. **Etapa 3 — Features core** (materias, sesiones de estudio, notas, calendario, rachas, estadísticas)
-4. **Etapa 4 — UI final y Docker** (pulido de interfaz, Dockerfile + docker-compose para backend/frontend/DB)
+1. **Stage 1 — Scaffold** ✅ (backend + initial frontend, no business logic)
+2. **Stage 2 — Database and authentication** (Sequelize, models, migrations, JWT, registration/login)
+3. **Stage 3 — Core features** (subjects, study sessions, notes, calendar, streaks, statistics)
+4. **Stage 4 — Final UI and Docker** (interface polishing, Dockerfile + docker-compose for backend/frontend/DB)
 
-El agente no debe adelantarse a una etapa posterior sin que el usuario lo indique explícitamente.
+The agent must not proceed to a later stage without the user explicitly indicating so.
 
 ---
 
-*Para el detalle técnico completo (variables de entorno, scripts, decisiones de scaffold), consultar [SPEC.md](./SPEC.md).*
+*For full technical details (environment variables, scripts, scaffolding decisions), consult [SPEC.md](./SPEC.md).*

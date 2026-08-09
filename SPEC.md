@@ -10,7 +10,61 @@
 
 **Usuario:** Estudiantes secundarios o universitarios que cursan varias materias simultáneamente y necesitan una herramienta simple para organizar su tiempo de estudio y centralizar sus apuntes.
 
+**Funcionalidades**:
+
+- Registro e inicio de sesión de usuario (email y contraseña).
+
+- Crear, editar y eliminar materias.
+
+- Registrar sesiones de estudio (materia, fecha, duración, tema).
+
+- Marcar exámenes próximos con fecha y recibir recordatorios.
+
+- Ver racha de días consecutivos estudiando.
+
+- Ver estadísticas de tiempo estudiado por materia/semana/mes.
+
+- Marcar materias como favoritas o prioritarias.
+
+- Fijar materias en un calendario semanal (día y horario recurrente de estudio).
+
+- Crear, editar y eliminar notas por materia (definiciones, consultas, apuntes).
+
+- Filtrar notas por tipo o por materia.
+
+
+
+
+**Modelo de datos**:
+
+- Usuario (id, nombre, email, contraseña hasheada, fecha de registro) - Tiene muchas Materias.
+
+- Materia (id, usuario_id, nombre, favorita, día/horario fijo de estudio) - Tiene muchas Sesiones y Notas.
+
+- Sesión de estudio (id, usuario_id, materia_id, fecha, duración, descripción, estado).
+
+- Nota (id, usuario_id, materia_id, tipo [definición/consulta/apunte], contenido, origen [usuario/IA], estado [solo consultas: pendiente/respondida], fecha de creación).
+
+**Restricciones**:
+
+
+- Cada usuario solo puede ver y modificar sus propios datos.
+
+- Las contraseñas deben almacenarse hasheadas, nunca en texto plano.
+
+- No se contempla en esta versión recuperación de contraseña ni notificaciones push, sincronización de calendarios externos (Google Calendar, etc.).
+
+- La aplicación debe funcionar correctamente en el navegador de escritorio.
+
+- Las notas deben registrar su origen (usuario o IA) para permitir trazabilidad si se integra la generación automática de contenido.
+
+- La aplicación debe poder levantarse completamente con Docker, sin requerir instalación local de Node o PostgreSQL.
+
+- La información debe ser persistente en localStorage.
+
 Este documento registra las decisiones técnicas tomadas en la etapa de scaffolding.
+
+
 
 ## 2. Stack tecnológico
 
