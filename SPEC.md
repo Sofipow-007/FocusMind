@@ -242,11 +242,51 @@ npm run preview  # Preview del build
 
 1. Configuración de Sequelize y conexión a MySQL
 2. Modelos, migraciones y seeders
-3. Autenticación JWT (registro, login, middleware)
+3. Autenticación JWT (registro, login, middleware) con contrato de API definido
 4. Rutas y controladores de negocio
 5. Pantallas y componentes de UI
 6. Docker Compose (backend + frontend + MySQL)
 7. Proxy de desarrollo en Vite hacia el API
+
+### 7.1 Contrato mínimo de autenticación para Etapa 2
+
+- Usuario mínimo:
+  - `id`
+  - `nombre`
+  - `email`
+  - `passwordHash`
+  - `createdAt`
+  - `updatedAt`
+
+- Endpoints de autenticación:
+  - `POST /api/auth/register` — registra un usuario nuevo.
+  - `POST /api/auth/login` — inicia sesión y devuelve un token JWT.
+  - `GET /api/auth/me` — devuelve datos del usuario autenticado (ruta protegida).
+
+- Payloads de request mínimos:
+  - Registro: `{ "nombre": string, "email": string, "password": string }`
+  - Login: `{ "email": string, "password": string }`
+
+- Respuesta de éxito mínima:
+  - `{ "user": { "id": number, "nombre": string, "email": string }, "token": string }`
+
+- Errores consistentes:
+  - Validación de campos faltantes o inválidos → `400 Bad Request`
+  - Email ya registrado → `409 Conflict`
+  - Credenciales inválidas → `401 Unauthorized`
+  - Token faltante o inválido → `401 Unauthorized`
+
+- Convenciones de frontend:
+  - Todas las llamadas HTTP deben vivir en `frontend/src/services/`.
+  - La base URL del backend se toma de `VITE_API_URL`.
+  - El token JWT no se debe hardcodear ni loguear en consola.
+  - El flujo UI debe manejar explícitamente estados de carga, éxito y error.
+
+- Validación mínima del flujo:
+  - Registro de usuario nuevo.
+  - Login con credenciales válidas.
+  - Acceso a ruta protegida con token válido.
+  - Rechazo de acceso sin token o con token inválido.
 
 
 
@@ -255,4 +295,3 @@ npm run preview  # Preview del build
 - **Node.js:** v18+ (probado con v24.16.0)
 - **npm:** v9+ (probado con v11.13.0)
 - **MySQL:** 8.x (requerido a partir de etapa 2)
-
