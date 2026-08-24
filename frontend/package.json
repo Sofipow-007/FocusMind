@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test:storage": "node --test scripts/storage.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

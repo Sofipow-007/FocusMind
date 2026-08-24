@@ -37,13 +37,17 @@
 
 **Modelo de datos**:
 
-- Usuario (id, nombre, email, contraseña hasheada, fecha de registro) - Tiene muchas Materias.
+- **Usuario**: `id`, `nombre`, `email`, `passwordHash`, `createdAt`, `updatedAt`. Tiene muchas Materias, Sesiones, Notas y Exámenes.
 
-- Materia (id, usuario_id, nombre, favorita, día/horario fijo de estudio) - Tiene muchas Sesiones y Notas.
+- **Materia**: `id`, `usuarioId`, `nombre`, `favorita`, `prioritaria`, `diaEstudio`, `horaInicio`, `horaFin`, `createdAt`, `updatedAt`. Tiene muchas Sesiones y Notas. El horario es opcional y representa un único bloque semanal recurrente.
 
-- Sesión de estudio (id, usuario_id, materia_id, fecha, duración, descripción, estado).
+- **Sesión de estudio**: `id`, `usuarioId`, `materiaId`, `fecha`, `duracion`, `descripcion`, `estado`, `createdAt`, `updatedAt`. Los estados permitidos serán `planificada`, `completada` o `cancelada`.
 
-- Nota (id, usuario_id, materia_id, tipo [definición/consulta/apunte], contenido, origen [usuario/IA], estado [solo consultas: pendiente/respondida], fecha de creación).
+- **Nota**: `id`, `usuarioId`, `materiaId`, `tipo`, `contenido`, `origen`, `estado`, `createdAt`, `updatedAt`. `tipo` admite `definicion`, `consulta` o `apunte`; `origen` admite `usuario` o `IA`; `estado` admite `pendiente` o `respondida` y solo aplica a notas de tipo `consulta`.
+
+- **Examen**: `id`, `usuarioId`, `materiaId`, `titulo`, `fecha`, `descripcion`, `createdAt`, `updatedAt`. Permite registrar exámenes y mostrar recordatorios dentro de la aplicación; no implica notificaciones push.
+
+Todas las entidades usan identificadores numéricos y referencias a su propietario. Las relaciones `materiaId` deben pertenecer al mismo `usuarioId` de la entidad que las utiliza.
 
 **Restricciones**:
 
@@ -58,9 +62,13 @@
 
 - Las notas deben registrar su origen (usuario o IA) para permitir trazabilidad si se integra la generación automática de contenido.
 
-- La aplicación debe poder levantarse completamente con Docker, sin requerir instalación local de Node o PostgreSQL.
+- La aplicación debe poder levantarse completamente con Docker, sin requerir instalación local de Node o MySQL, cuando se implemente la contenerización.
 
-- La información debe ser persistente en localStorage.
+- Durante la Etapa 1, cualquier prototipo de persistencia del frontend podrá usar `localStorage`.
+
+- Desde la Etapa 2, MySQL será la fuente oficial de persistencia para los datos de la aplicación. No se mantendrán dos fuentes de verdad para los mismos datos.
+
+- La eliminación de una Materia eliminará sus Sesiones y Notas asociadas mediante una política de cascada definida en la capa de datos. Los registros de Usuario y Examen se conservarán según las reglas de negocio que se definan en su etapa correspondiente.
 
 Este documento registra las decisiones técnicas tomadas en la etapa de scaffolding.
 
@@ -72,7 +80,7 @@ Este documento registra las decisiones técnicas tomadas en la etapa de scaffold
 | Capa          | Tecnología                  | Estado en etapa 1 |
 | ------------- | --------------------------- | ----------------- |
 | Backend       | Node.js + Express           | ✅ Scaffold creado |
-| Frontend      | React + Vite + localStorage | ✅ Scaffold creado |
+| Frontend      | React + Vite | ✅ Scaffold creado |
 | Base de datos | MySQL + Sequelize.js        | ⏳ Deps instaladas |
 | Autenticación | JWT + bcrypt                | ⏳ Deps instaladas |
 | Contenedores  | Docker + Docker Compose     | ⏳ Etapa posterior |
@@ -100,14 +108,22 @@ FocusMind/
 │   ├── src/
 │   │   ├── components/      # Componentes reutilizables
 │   │   ├── pages/           # Vistas/páginas
-│   │   ├── services/        # Clientes HTTP / API
+│   │   ├── services/        # Clientes HTTP / persistencia de prototipo
+│   │   │   ├── api.js
+│   │   │   └── storage.js
 │   │   ├── hooks/           # Custom hooks
+│   │   │   └── useLocalStorage.js
 │   │   ├── utils/           # Utilidades
+│   │   │   ├── storageKeys.js
+│   │   │   └── storageSchema.js
 │   │   ├── App.jsx
 │   │   └── main.jsx
+│   ├── scripts/
+│   │   └── storage.test.js
 │   ├── .env.example
 │   └── package.json
 ├── SPEC.md                  # Este documento
+├── AGENTS.md
 └── README.md
 ```
 
@@ -175,11 +191,21 @@ Las siguientes librerías están en `backend/package.json` listas para la etapa 
 
 **Motivo:** No se agregó React Router, axios ni librerías de UI hasta definir las pantallas y flujos en etapas posteriores.
 
-### 4.9 Docker — diferido a etapa 2
+### 4.9 Persistencia local de prototipo
+
+**Decisión:** El frontend podrá utilizar `localStorage` únicamente como soporte temporal para prototipos y datos de demostración.
+
+**Alcance:** La persistencia local podrá almacenar preferencias de interfaz y datos no sensibles necesarios para probar flujos del frontend antes de disponer de la API completa.
+
+**Límites:** No se almacenarán contraseñas, hashes de contraseñas, tokens JWT ni otros secretos en `localStorage`. La autenticación real será responsabilidad conjunta del backend y frontend, con validación de credenciales en el backend.
+
+**Migración:** Desde la Etapa 2, MySQL será la fuente oficial de datos. El acceso a la persistencia local deberá realizarse mediante una capa de servicios para facilitar su reemplazo por servicios HTTP, sin acoplar `localStorage` a los componentes de interfaz.
+
+### 4.10 Docker — diferido a etapa 4
 
 **Decisión:** No se incluyen `Dockerfile` ni `docker-compose.yml` en esta etapa.
 
-**Motivo:** El usuario indicó que el objetivo de la etapa 1 es el scaffold de backend/frontend. Docker se documentará e implementará cuando exista configuración de DB y servicios que orquestar.
+**Motivo:** El usuario indicó que el objetivo de la etapa 1 es el scaffold de backend/frontend. Docker se implementará en la Etapa 4, cuando existan la aplicación funcional y los servicios que orquestar.
 
 ## 5. Variables de entorno
 
@@ -240,13 +266,36 @@ npm run preview  # Preview del build
 
 ## 7. Próximas etapas (fuera de alcance actual)
 
-1. Configuración de Sequelize y conexión a MySQL
-2. Modelos, migraciones y seeders
-3. Autenticación JWT (registro, login, middleware) con contrato de API definido
-4. Rutas y controladores de negocio
-5. Pantallas y componentes de UI
-6. Docker Compose (backend + frontend + MySQL)
-7. Proxy de desarrollo en Vite hacia el API
+### Etapa 1 — Scaffold y verificación
+
+1. Completar la estructura base del backend y frontend.
+2. Verificar el arranque de ambos proyectos.
+3. Verificar el endpoint `GET /api/health`.
+4. Mantener esta etapa sin base de datos, autenticación ni lógica de negocio.
+
+### Etapa 2 — Base de datos y autenticación
+
+1. Configurar Sequelize y la conexión a MySQL.
+2. Crear modelos, relaciones, migraciones y seeders para Usuario, Materia, Sesión, Nota y Examen.
+3. Implementar autenticación JWT con registro, login y middleware de protección.
+4. Validar propiedad de los datos mediante `usuarioId` y relaciones consistentes.
+5. Definir y probar el contrato de API de autenticación descrito en la sección 7.1.
+
+### Etapa 3 — Funcionalidades principales
+
+1. Implementar CRUD de Materias.
+2. Implementar registro y consulta de Sesiones.
+3. Implementar Exámenes y recordatorios dentro de la aplicación.
+4. Implementar Notas, filtros por tipo y filtros por Materia.
+5. Implementar calendario semanal, favoritos, prioridades, racha y estadísticas.
+6. Crear las pantallas y componentes necesarios para estos flujos.
+
+### Etapa 4 — Interfaz final y despliegue local
+
+1. Pulir la interfaz para escritorio y sus estados de carga, error y vacío.
+2. Incorporar Dockerfiles y Docker Compose para frontend, backend y MySQL.
+3. Configurar el proxy de desarrollo de Vite hacia el API si resulta necesario.
+4. Validar el levantamiento completo del sistema mediante Docker.
 
 ### 7.1 Contrato mínimo de autenticación para Etapa 2
 

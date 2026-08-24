@@ -22,3 +22,15 @@ cp .env.example .env   # Linux/macOS — en Windows: copy .env.example .env
 npm run dev
 ```
 
+### Verificaciones rápidas
+
+Con el backend iniciado, `GET http://localhost:3001/api/health` debe responder con estado `200`.
+
+Desde `frontend/`, ejecutá:
+
+```bash
+npm run build
+npm run lint
+npm run test:storage
+```
+

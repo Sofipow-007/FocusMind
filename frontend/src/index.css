@@ -1,12 +1,61 @@
 :root {
-  font-family: system-ui, sans-serif;
+  font-family: Arial, sans-serif;
   line-height: 1.5;
+  color: #17202a;
+  background: #f4f7f5;
 }
 
 body {
   margin: 0;
+  min-width: 320px;
 }
 
 main {
+  box-sizing: border-box;
+  max-width: 44rem;
+  min-height: 100vh;
   padding: 2rem;
+  margin: 0 auto;
+  display: grid;
+  align-content: center;
+  gap: 1.5rem;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 2.5rem;
+  letter-spacing: 0;
+}
+
+.status {
+  padding: 1rem 1.25rem;
+  border: 1px solid #c8d3cd;
+  border-left: 0.35rem solid #8b9a91;
+  background: #ffffff;
+}
+
+.status-label {
+  font-weight: 700;
+}
+
+.status-connected {
+  border-left-color: #247a52;
+}
+
+.status-error {
+  border-left-color: #b3483c;
+}
+
+@media (max-width: 40rem) {
+  main {
+    padding: 1.25rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
 }
