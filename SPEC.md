@@ -39,7 +39,7 @@
 
 - **Usuario**: `id`, `nombre`, `email`, `passwordHash`, `createdAt`, `updatedAt`. Tiene muchas Materias, Sesiones, Notas y Exámenes.
 
-- **Materia**: `id`, `usuarioId`, `nombre`, `favorita`, `prioritaria`, `diaEstudio`, `horaInicio`, `horaFin`, `createdAt`, `updatedAt`. Tiene muchas Sesiones y Notas. El horario es opcional y representa un único bloque semanal recurrente.
+- **Materia**: `id`, `usuarioId`, `nombre`, `favorita`, `prioritaria`, `diaEstudio`, `horaInicio`, `horaFin`, `createdAt`, `updatedAt`. Tiene muchas Sesiones y Notas. El horario es opcional y representa un único bloque semanal recurrente y determinado.
 
 - **Sesión de estudio**: `id`, `usuarioId`, `materiaId`, `fecha`, `duracion`, `descripcion`, `estado`, `createdAt`, `updatedAt`. Los estados permitidos serán `planificada`, `completada` o `cancelada`.
 
@@ -49,10 +49,11 @@
 
 Todas las entidades usan identificadores numéricos y referencias a su propietario. Las relaciones `materiaId` deben pertenecer al mismo `usuarioId` de la entidad que las utiliza.
 
+
 **Restricciones**:
 
 
-- Cada usuario solo puede ver y modificar sus propios datos.
+- Cada usuario solo puede ver y modificar sus propios datos (aislamiento por usuario_id).
 
 - Las contraseñas deben almacenarse hasheadas, nunca en texto plano.
 
@@ -68,7 +69,7 @@ Todas las entidades usan identificadores numéricos y referencias a su propietar
 
 - Desde la Etapa 2, MySQL será la fuente oficial de persistencia para los datos de la aplicación. No se mantendrán dos fuentes de verdad para los mismos datos.
 
-- La eliminación de una Materia eliminará sus Sesiones y Notas asociadas mediante una política de cascada definida en la capa de datos. Los registros de Usuario y Examen se conservarán según las reglas de negocio que se definan en su etapa correspondiente.
+- La eliminación de una Materia eliminará sus Sesiones, Notas y Exámenes asociados (sin cascada inversa) mediante una política de cascada definida en la capa de datos. La eliminación de un Usuario aplica cascada total: se eliminan todas sus Materias, Sesiones, Notas y Exámenes asociados. No se conserva histórico de estos datos tras la eliminación del Usuario.
 
 Este documento registra las decisiones técnicas tomadas en la etapa de scaffolding.
 
@@ -193,7 +194,7 @@ Las siguientes librerías están en `backend/package.json` listas para la etapa 
 
 ### 4.9 Persistencia local de prototipo
 
-**Decisión:** El frontend podrá utilizar `localStorage` únicamente como soporte temporal para prototipos y datos de demostración.
+**Decisión:** El frontend podrá utilizar `localStorage` únicamente como soporte temporal para prototipos y datos de demostración (datos no sensibles).
 
 **Alcance:** La persistencia local podrá almacenar preferencias de interfaz y datos no sensibles necesarios para probar flujos del frontend antes de disponer de la API completa.
 
@@ -207,8 +208,15 @@ Las siguientes librerías están en `backend/package.json` listas para la etapa 
 
 **Motivo:** El usuario indicó que el objetivo de la etapa 1 es el scaffold de backend/frontend. Docker se implementará en la Etapa 4, cuando existan la aplicación funcional y los servicios que orquestar.
 
-## 5. Variables de entorno
+### 4.11 Contrato de datos
+- `camelCase` en JS y en nombres equivalentes en la base de datos.
+- Fechas: Usar formato **ISO 8601** (`2026-08-27T14:00:00Z`) para todo lo que viaje por la API.
+- `duracion`: Unidad en **minutos**.
+- IDs numéricos autoincrementales.
+- Campos obligatorios/longitudes: Definirlo por entidad en la Etapa 2 de Base de datos y autenticación.
+- Valores por defecto: `favorita: false`, `prioritaria: false`, estado de sesión por defecto `planificada`.
 
+## 5. Variables de entorno
 
 
 ### Backend (`backend/.env.example`)
@@ -235,6 +243,8 @@ Las siguientes librerías están en `backend/package.json` listas para la etapa 
 | Variable       | Descripción              | Valor por defecto       |
 | -------------- | ------------------------ | ----------------------- |
 | `VITE_API_URL` | URL base del API backend | `http://localhost:3001` |
+
+**Fallback:** Si `VITE_API_URL` no está definida en el entorno, `frontend/src/services/api.js` usa `http://localhost:3001` como valor por defecto en tiempo de ejecución. Este comportamiento ya está implementado en el scaffold actual.
 
 
 
@@ -299,6 +309,8 @@ npm run preview  # Preview del build
 
 ### 7.1 Contrato mínimo de autenticación para Etapa 2
 
+**Modelo de autenticación:** JWT emitido por el backend y enviado al cliente mediante una cookie HttpOnly. El frontend nunca lee ni escribe el token directamente; el navegador lo adjunta automáticamente en cada request al backend.
+
 - Usuario mínimo:
   - `id`
   - `nombre`
@@ -308,34 +320,50 @@ npm run preview  # Preview del build
   - `updatedAt`
 
 - Endpoints de autenticación:
-  - `POST /api/auth/register` — registra un usuario nuevo.
-  - `POST /api/auth/login` — inicia sesión y devuelve un token JWT.
-  - `GET /api/auth/me` — devuelve datos del usuario autenticado (ruta protegida).
+  - `POST /api/auth/register` — registra un usuario nuevo y setea la cookie de sesión.
+  - `POST /api/auth/login` — valida credenciales y setea la cookie de sesión.
+  - `GET /api/auth/me` — devuelve datos del usuario autenticado validando la cookie (ruta protegida).
+  - `POST /api/auth/logout` — invalida la cookie de sesión en el backend.
 
 - Payloads de request mínimos:
   - Registro: `{ "nombre": string, "email": string, "password": string }`
   - Login: `{ "email": string, "password": string }`
+  - Logout: sin body.
 
-- Respuesta de éxito mínima:
-  - `{ "user": { "id": number, "nombre": string, "email": string }, "token": string }`
+- Respuesta de éxito mínima (register/login/me):
+  - `{ "user": { "id": number, "nombre": string, "email": string } }`
+  - El token no se incluye en el body de la respuesta; viaja únicamente en la cookie `HttpOnly`.
+
+- Configuración de la cookie:
+  - `HttpOnly: true` (JS no puede leerla).
+  - `SameSite: Strict` o `Lax` según necesidad de navegación cruzada.
+  - `Secure: true` en producción (solo se envía sobre HTTPS).
+  - Expiración alineada con `JWT_EXPIRES_IN`.
 
 - Errores consistentes:
   - Validación de campos faltantes o inválidos → `400 Bad Request`
   - Email ya registrado → `409 Conflict`
   - Credenciales inválidas → `401 Unauthorized`
-  - Token faltante o inválido → `401 Unauthorized`
+  - Cookie faltante o token inválido/expirado → `401 Unauthorized`
+  - Error interno no controlado → `500 Internal Server Error`, respetando el mismo formato de respuesta de error que el resto de los códigos (nunca se expone el stack trace ni detalles internos en el body; el detalle completo queda solo en el log del servidor).
 
 - Convenciones de frontend:
   - Todas las llamadas HTTP deben vivir en `frontend/src/services/`.
   - La base URL del backend se toma de `VITE_API_URL`.
-  - El token JWT no se debe hardcodear ni loguear en consola.
+  - Todo fetch al backend debe incluir `credentials: 'include'` para que la cookie viaje correctamente.
+  - El token JWT nunca se lee, escribe ni loguea desde el frontend.
   - El flujo UI debe manejar explícitamente estados de carga, éxito y error.
+  - Datos no sensibles del usuario (`nombre`, `email`) pueden guardarse en `localStorage` o estado de React para uso de UI, según lo definido en la sección 4.9.
+
+- Convenciones de backend:
+  - CORS debe configurarse con origen específico del frontend (no wildcard) y `credentials: true`, ya que las cookies cross-origin lo requieren.
 
 - Validación mínima del flujo:
-  - Registro de usuario nuevo.
-  - Login con credenciales válidas.
-  - Acceso a ruta protegida con token válido.
-  - Rechazo de acceso sin token o con token inválido.
+  - Registro de usuario nuevo → cookie seteada correctamente.
+  - Login con credenciales válidas → cookie seteada correctamente.
+  - Acceso a `/api/auth/me` con cookie válida → devuelve datos del usuario.
+  - Acceso a ruta protegida sin cookie o con cookie inválida/expirada → `401`
+  - Logout → cookie invalidada, siguiente acceso a `/api/auth/me` devuelve `401`.
 
 
 

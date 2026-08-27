@@ -30,7 +30,7 @@ Levanta el servidor en modo desarrollo con auto-reload:
 npm run dev
 ```
 
-El API estará disponible en `http://localhost:3001`
+El API estará disponible en `http://localhost:3001`.
 
 ## Producción
 
