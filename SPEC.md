@@ -1,6 +1,6 @@
 # FocusMind — Especificación técnica
 
-> Etapa 1: base inicial del proyecto. Sin funcionalidades ni lógica de negocio implementadas.
+> Etapa 2: Base de Datos y Autenticación. Agregado de endpoints de inicio de sesión y login.
 
 ## 1. Descripción general
 
