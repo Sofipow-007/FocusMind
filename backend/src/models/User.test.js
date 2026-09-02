@@ -1,8 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { sequelize, databaseConfig } = require('./config');
-const { User } = require('./models');
+const { sequelize } = require('../config');
+const { User } = require('./index');
 const bcrypt = require('bcrypt');
+
+test.after(async () => {
+  await sequelize.close();
+});
 
 // Limpieza de la BD antes de los tests
 async function setupDatabase() {
@@ -10,7 +14,7 @@ async function setupDatabase() {
 }
 
 // Test 1: Crear un usuario en la BD
-test('Crear un usuario en la base de datos', async () => {
+test('Crear un usuario en la base de datos', { concurrency: false }, async () => {
   await setupDatabase();
 
   const password = 'test123secure';
@@ -26,11 +30,10 @@ test('Crear un usuario en la base de datos', async () => {
   assert.equal(user.email, 'demo@focusmind.com');
   assert.ok(user.id);
 
-  await sequelize.close();
 });
 
 // Test 2: Buscar usuario por email
-test('Buscar usuario por email', async () => {
+test('Buscar usuario por email', { concurrency: false }, async () => {
   await setupDatabase();
 
   const password = 'test123secure';
@@ -47,11 +50,10 @@ test('Buscar usuario por email', async () => {
   assert.ok(foundUser);
   assert.equal(foundUser.nombre, 'Search Test');
 
-  await sequelize.close();
 });
 
 // Test 3: Validación de email único
-test('No permite crear dos usuarios con el mismo email', async () => {
+test('No permite crear dos usuarios con el mismo email', { concurrency: false }, async () => {
   await setupDatabase();
 
   const passwordHash = await bcrypt.hash('test123', 10);
@@ -70,10 +72,9 @@ test('No permite crear dos usuarios con el mismo email', async () => {
     });
     assert.fail('Debería haber lanzado un error de unicidad');
   } catch (error) {
-    assert.ok(error.message.includes('Unique constraint failed'));
+    assert.equal(error.name, 'SequelizeUniqueConstraintError');
   }
 
-  await sequelize.close();
 });
 
 // Test 4: Validación de contraseña

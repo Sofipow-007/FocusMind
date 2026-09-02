@@ -2,6 +2,7 @@ const User = require('./User');
 const Subject = require('./Subject');
 const StudySession = require('./StudySession');
 const Note = require('./Note');
+const Exam = require('./Exam');
 
 // Definir relaciones
 // Un usuario tiene muchas materias
@@ -24,9 +25,16 @@ Note.belongsTo(Subject, { foreignKey: 'materiaId' });
 User.hasMany(Note, { foreignKey: 'usuarioId', onDelete: 'CASCADE' });
 Note.belongsTo(User, { foreignKey: 'usuarioId' });
 
+Subject.hasMany(Exam, { foreignKey: 'materiaId', onDelete: 'CASCADE' });
+Exam.belongsTo(Subject, { foreignKey: 'materiaId' });
+
+User.hasMany(Exam, { foreignKey: 'usuarioId', onDelete: 'CASCADE' });
+Exam.belongsTo(User, { foreignKey: 'usuarioId' });
+
 module.exports = {
   User,
   Subject,
   StudySession,
   Note,
+  Exam,
 };
