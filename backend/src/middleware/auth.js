@@ -2,12 +2,13 @@ const { verifyToken } = require('../utils/jwt');
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
+  const token = req.cookies?.focusmind_session || (
+    authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null
+  );
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
     return res.status(401).json({ message: 'Token no proporcionado' });
   }
-
-  const token = authHeader.replace('Bearer ', '');
 
   try {
     const decoded = verifyToken(token);

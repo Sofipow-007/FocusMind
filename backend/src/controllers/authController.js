@@ -2,6 +2,25 @@ const bcrypt = require('bcrypt');
 const { signToken } = require('../utils/jwt');
 const { User } = require('../models');
 
+const COOKIE_NAME = 'focusmind_session';
+
+function getCookieMaxAge() {
+  const match = String(process.env.JWT_EXPIRES_IN || '7d').match(/^(\d+)([dhm])$/);
+  if (!match) return undefined;
+
+  const units = { m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 };
+  return Number(match[1]) * units[match[2]];
+}
+
+function setSessionCookie(res, token) {
+  res.cookie(COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: getCookieMaxAge(),
+  });
+}
+
 const register = async (req, res) => {
   try {
     const { email, password, nombre } = req.body || {};
@@ -24,6 +43,7 @@ const register = async (req, res) => {
     });
 
     const token = signToken({ userId: user.id, email: user.email });
+    setSessionCookie(res, token);
 
     return res.status(201).json({
       message: 'Usuario registrado correctamente',
@@ -32,7 +52,6 @@ const register = async (req, res) => {
         nombre: user.nombre,
         email: user.email,
       },
-      token,
     });
   } catch (error) {
     console.error('Error en registro:', error.message);
@@ -61,6 +80,7 @@ const login = async (req, res) => {
     }
 
     const token = signToken({ userId: user.id, email: user.email });
+    setSessionCookie(res, token);
 
     return res.status(200).json({
       message: 'Login correcto',
@@ -69,7 +89,6 @@ const login = async (req, res) => {
         nombre: user.nombre,
         email: user.email,
       },
-      token,
     });
   } catch (error) {
     console.error('Error en login:', error.message);
@@ -77,7 +96,36 @@ const login = async (req, res) => {
   }
 };
 
+const me = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userId, {
+      attributes: ['id', 'nombre', 'email', 'createdAt', 'updatedAt'],
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: 'Usuario no encontrado' });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.error('Error al obtener usuario autenticado:', error.message);
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+const logout = (req, res) => {
+  res.clearCookie(COOKIE_NAME, {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
+
+  return res.status(200).json({ message: 'Sesión cerrada correctamente' });
+};
+
 module.exports = {
   register,
   login,
+  me,
+  logout,
 };

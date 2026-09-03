@@ -1,6 +1,6 @@
 # FocusMind — Especificación técnica
 
-> Etapa 2: Base de Datos y Autenticación. Agregado de endpoints de inicio de sesión y login.
+> Estado actual: Etapa 2 avanzada. Backend con MySQL, modelos, autenticación JWT por cookie HttpOnly y CRUD inicial; frontend funcional y endurecimiento pendiente.
 
 ## 1. Descripción general
 
@@ -78,13 +78,13 @@ Este documento registra las decisiones técnicas tomadas en la etapa de scaffold
 ## 2. Stack tecnológico
 
 
-| Capa          | Tecnología                  | Estado en etapa 1 |
+| Capa          | Tecnología                  | Estado actual |
 | ------------- | --------------------------- | ----------------- |
-| Backend       | Node.js + Express           | ✅ Scaffold creado |
-| Frontend      | React + Vite | ✅ Scaffold creado |
-| Base de datos | MySQL + Sequelize.js        | ⏳ Deps instaladas |
-| Autenticación | JWT + bcrypt                | ⏳ Deps instaladas |
-| Contenedores  | Docker + Docker Compose     | ⏳ Etapa posterior |
+| Backend       | Node.js + Express           | ✅ API y CRUD inicial |
+| Frontend      | React + Vite                | ⚠️ Solo health check |
+| Base de datos | MySQL + Sequelize.js        | ✅ Conexion y modelos iniciales |
+| Autenticación | JWT + bcrypt                | ⚠️ Cookie HttpOnly implementada; pruebas y endurecimiento pendientes |
+| Contenedores  | Docker + Docker Compose     | ⚠️ MySQL en Compose; app pendiente |
 
 
 
@@ -164,23 +164,23 @@ FocusMind/
 
 **Motivo:** Evita conflicto con Vite (puerto `5173` por defecto) y con otros servicios locales comunes en `3000`.
 
-### 4.6 CORS habilitado globalmente
+### 4.6 CORS
 
-**Decisión:** Se aplica `cors()` sin restricciones en etapa 1.
+**Estado actual:** Se usa el origen de `FRONTEND_URL` y `credentials: true` para soportar cookies HttpOnly. En producción debe configurarse explícitamente `FRONTEND_URL`.
 
 **Motivo:** Permite que el frontend en desarrollo se comunique con el API. En producción se restringirá al origen del frontend (etapa posterior).
 
-### 4.7 Dependencias instaladas pero no configuradas
+### 4.7 Dependencias configuradas
 
-Las siguientes librerías están en `backend/package.json` listas para la etapa 2, sin código de configuración aún:
+Las siguientes librerías se utilizan actualmente en el backend:
 
 
 | Paquete        | Uso previsto                         |
 | -------------- | ------------------------------------ |
-| `sequelize`    | ORM para MySQL                       |
+| `sequelize`    | ORM y sincronización inicial con MySQL |
 | `mysql2`       | Driver de MySQL para Sequelize       |
-| `jsonwebtoken` | Emisión y verificación de tokens JWT |
-| `bcrypt`       | Hash de contraseñas                  |
+| `jsonwebtoken` | Emisión y verificación de tokens JWT Bearer |
+| `bcrypt`       | Hash y verificación de contraseñas   |
 | `dotenv`       | Variables de entorno                 |
 
 
@@ -202,11 +202,11 @@ Las siguientes librerías están en `backend/package.json` listas para la etapa 
 
 **Migración:** Desde la Etapa 2, MySQL será la fuente oficial de datos. El acceso a la persistencia local deberá realizarse mediante una capa de servicios para facilitar su reemplazo por servicios HTTP, sin acoplar `localStorage` a los componentes de interfaz.
 
-### 4.10 Docker — diferido a etapa 4
+### 4.10 Docker — desarrollo parcial
 
-**Decisión:** No se incluyen `Dockerfile` ni `docker-compose.yml` en esta etapa.
+**Estado actual:** `docker-compose.dev.yml` levanta MySQL para desarrollo. Aún no existen Dockerfiles ni servicios containerizados para backend y frontend.
 
-**Motivo:** El usuario indicó que el objetivo de la etapa 1 es el scaffold de backend/frontend. Docker se implementará en la Etapa 4, cuando existan la aplicación funcional y los servicios que orquestar.
+**Pendiente:** completar la orquestación de toda la aplicación en la Etapa 4.
 
 ### 4.11 Contrato de datos
 - `camelCase` en JS y en nombres equivalentes en la base de datos.
@@ -233,6 +233,7 @@ Las siguientes librerías están en `backend/package.json` listas para la etapa 
 | `DB_PASSWORD`    | Contraseña de MySQL        | —                 |
 | `JWT_SECRET`     | Secreto para firmar tokens | —                 |
 | `JWT_EXPIRES_IN` | Expiración del token       | `7d`              |
+| `FRONTEND_URL`   | Origen permitido por CORS  | `http://localhost:5173` |
 
 
 
@@ -272,35 +273,46 @@ npm run build    # Build de producción
 npm run preview  # Preview del build
 ```
 
+### Tests
+
+```bash
+cd backend
+npm test
+
+cd ../frontend
+npm run test:storage
+npm run lint
+```
 
 
-## 7. Próximas etapas (fuera de alcance actual)
 
-### Etapa 1 — Scaffold y verificación
+## 7. Estado y próximas etapas
+
+### Etapa 1 — Scaffold y verificación (completada)
 
 1. Completar la estructura base del backend y frontend.
 2. Verificar el arranque de ambos proyectos.
 3. Verificar el endpoint `GET /api/health`.
 4. Mantener esta etapa sin base de datos, autenticación ni lógica de negocio.
 
-### Etapa 2 — Base de datos y autenticación
+### Etapa 2 — Base de datos y autenticación (en progreso)
 
-1. Configurar Sequelize y la conexión a MySQL.
-2. Crear modelos, relaciones, migraciones y seeders para Usuario, Materia, Sesión, Nota y Examen.
-3. Implementar autenticación JWT con registro, login y middleware de protección.
-4. Validar propiedad de los datos mediante `usuarioId` y relaciones consistentes.
-5. Definir y probar el contrato de API de autenticación descrito en la sección 7.1.
+1. ✅ Configurar Sequelize y la conexión a MySQL.
+2. ⚠️ Crear modelos y relaciones; faltan migraciones y seeders formales.
+3. ⚠️ Implementar JWT con cookie HttpOnly, registro, login, `me`, logout y middleware; faltan pruebas completas y endurecimiento del secreto.
+4. ⚠️ Validar propiedad mediante `usuarioId`; faltan pruebas de aislamiento y cascadas.
+5. ⏳ Probar formalmente el contrato de API de autenticación descrito en la sección 7.1.
 
-### Etapa 3 — Funcionalidades principales
+### Etapa 3 — Funcionalidades principales (backend parcial)
 
-1. Implementar CRUD de Materias.
-2. Implementar registro y consulta de Sesiones.
-3. Implementar Exámenes y recordatorios dentro de la aplicación.
-4. Implementar Notas, filtros por tipo y filtros por Materia.
-5. Implementar calendario semanal, favoritos, prioridades, racha y estadísticas.
-6. Crear las pantallas y componentes necesarios para estos flujos.
+1. ✅ Implementar CRUD de Materias.
+2. ✅ Implementar registro y consulta de Sesiones.
+3. ⚠️ Implementar Exámenes; falta la interfaz de recordatorios.
+4. ✅ Implementar Notas y filtros básicos.
+5. ⚠️ Favoritos y prioridades tienen campos; faltan calendario, racha y estadísticas por semana/mes.
+6. ⏳ Crear las pantallas y componentes de estos flujos.
 
-### Etapa 4 — Interfaz final y despliegue local
+### Etapa 4 — Interfaz final y despliegue local (pendiente)
 
 1. Pulir la interfaz para escritorio y sus estados de carga, error y vacío.
 2. Incorporar Dockerfiles y Docker Compose para frontend, backend y MySQL.
