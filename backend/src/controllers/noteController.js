@@ -1,11 +1,5 @@
 const { Note, Subject } = require('../models');
-const {
-  NOTE_ORIGINS,
-  NOTE_STATES,
-  NOTE_TYPES,
-  isNonEmptyString,
-  isPositiveInteger,
-} = require('../utils/validation');
+const { validateNoteInput, validateNoteUpdateInput } = require('../validators/noteValidator');
 
 const createNote = async (req, res) => {
   try {
@@ -16,11 +10,9 @@ const createNote = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    if (!isPositiveInteger(materiaId) || !NOTE_TYPES.includes(tipo) || !isNonEmptyString(contenido) ||
-      (origen !== undefined && !NOTE_ORIGINS.includes(origen)) ||
-      (estado !== undefined && !NOTE_STATES.includes(estado)) ||
-      (tipo !== 'consulta' && estado !== undefined)) {
-      return res.status(400).json({ message: 'materiaId, tipo y contenido son obligatorios' });
+    const validationError = validateNoteInput({ materiaId, tipo, contenido, origen, estado });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     // Verificar que la materia pertenece al usuario
@@ -108,9 +100,9 @@ const updateNote = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    if ((contenido !== undefined && !isNonEmptyString(contenido)) ||
-      (estado !== undefined && !NOTE_STATES.includes(estado))) {
-      return res.status(400).json({ message: 'Los datos de la nota no son válidos' });
+    const validationError = validateNoteUpdateInput({ contenido, estado });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     const note = await Note.findOne({

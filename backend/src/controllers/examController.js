@@ -1,9 +1,5 @@
 const { Exam, Subject } = require('../models');
-const {
-  isNonEmptyString,
-  isPositiveInteger,
-  isValidDate,
-} = require('../utils/validation');
+const { validateExamInput } = require('../validators/examValidator');
 
 const getUserId = (req) => req.user?.userId;
 
@@ -13,9 +9,9 @@ const createExam = async (req, res) => {
     const { materiaId, titulo, fecha, descripcion } = req.body || {};
 
     if (!usuarioId) return res.status(401).json({ message: 'No autorizado' });
-    if (!isPositiveInteger(materiaId) || !isNonEmptyString(titulo) || !isValidDate(fecha) ||
-      (descripcion !== undefined && descripcion !== null && !isNonEmptyString(descripcion))) {
-      return res.status(400).json({ message: 'materiaId, titulo y fecha son obligatorios' });
+    const validationError = validateExamInput({ materiaId, titulo, fecha, descripcion });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     const subject = await Subject.findOne({ where: { id: materiaId, usuarioId } });
@@ -72,10 +68,9 @@ const updateExam = async (req, res) => {
     const exam = await Exam.findOne({ where: { id: req.params.id, usuarioId } });
     if (!exam) return res.status(404).json({ message: 'Examen no encontrado' });
     const { titulo, fecha, descripcion } = req.body || {};
-    if ((titulo !== undefined && !isNonEmptyString(titulo)) ||
-      (fecha !== undefined && !isValidDate(fecha)) ||
-      (descripcion !== undefined && descripcion !== null && !isNonEmptyString(descripcion))) {
-      return res.status(400).json({ message: 'Los datos del examen no son válidos' });
+    const validationError = validateExamInput({ titulo, fecha, descripcion }, true);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
     await exam.update({
       titulo: titulo !== undefined ? titulo.trim() : exam.titulo,

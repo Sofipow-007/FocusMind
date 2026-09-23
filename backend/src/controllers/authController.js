@@ -1,7 +1,11 @@
-const bcrypt = require('bcrypt');
-const { signToken } = require('../utils/jwt');
-const { User } = require('../models');
-const { isNonEmptyString, isValidEmail } = require('../utils/validation');
+const {
+  EMAIL_EXISTS,
+  INVALID_CREDENTIALS,
+  getAuthenticatedUser,
+  loginUser,
+  registerUser,
+} = require('../services/authService');
+const { validateLoginInput, validateRegisterInput } = require('../validators/authValidator');
 const envConfig = require('../config/env');
 
 function getCookieMaxAge() {
@@ -25,35 +29,22 @@ const register = async (req, res) => {
   try {
     const { email, password, nombre } = req.body || {};
 
-    if (!isNonEmptyString(nombre) || !isValidEmail(email) || !isNonEmptyString(password)) {
-      return res.status(400).json({ message: 'Nombre, email y password son obligatorios' });
+    const validationError = validateRegisterInput({ nombre, email, password });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(409).json({ message: 'El email ya está registrado' });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      nombre,
-      email,
-      passwordHash,
-    });
-
-    const token = signToken({ userId: user.id, email: user.email });
-    setSessionCookie(res, token);
+    const result = await registerUser({ nombre, email, password });
+    setSessionCookie(res, result.token);
 
     return res.status(201).json({
       message: 'Usuario registrado correctamente',
-      user: {
-        id: user.id,
-        nombre: user.nombre,
-        email: user.email,
-      },
+      user: result.user,
     });
   } catch (error) {
+    if (error.code === EMAIL_EXISTS) {
+      return res.status(409).json({ message: error.message });
+    }
     console.error('Error en registro:', error.message);
     return res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -63,34 +54,22 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body || {};
 
-    if (!isValidEmail(email) || !isNonEmptyString(password)) {
-      return res.status(400).json({ message: 'Email y password son obligatorios' });
+    const validationError = validateLoginInput({ email, password });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
-    }
-
-    const isValid = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isValid) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
-    }
-
-    const token = signToken({ userId: user.id, email: user.email });
-    setSessionCookie(res, token);
+    const result = await loginUser({ email, password });
+    setSessionCookie(res, result.token);
 
     return res.status(200).json({
       message: 'Login correcto',
-      user: {
-        id: user.id,
-        nombre: user.nombre,
-        email: user.email,
-      },
+      user: result.user,
     });
   } catch (error) {
+    if (error.code === INVALID_CREDENTIALS) {
+      return res.status(401).json({ message: error.message });
+    }
     console.error('Error en login:', error.message);
     return res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -98,9 +77,7 @@ const login = async (req, res) => {
 
 const me = async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.userId, {
-      attributes: ['id', 'nombre', 'email', 'createdAt', 'updatedAt'],
-    });
+    const user = await getAuthenticatedUser(req.user.userId);
 
     if (!user) {
       return res.status(401).json({ message: 'Usuario no encontrado' });

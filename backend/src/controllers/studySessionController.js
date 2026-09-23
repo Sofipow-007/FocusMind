@@ -1,10 +1,5 @@
 const { StudySession, Subject } = require('../models');
-const {
-  SESSION_STATES,
-  isNonEmptyString,
-  isPositiveInteger,
-  isValidDate,
-} = require('../utils/validation');
+const { validateStudySessionInput } = require('../validators/studySessionValidator');
 
 const createStudySession = async (req, res) => {
   try {
@@ -15,10 +10,9 @@ const createStudySession = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    if (!isPositiveInteger(materiaId) || !isValidDate(fecha) || !isPositiveInteger(duracion) ||
-      (descripcion !== undefined && descripcion !== null && !isNonEmptyString(descripcion)) ||
-      (estado !== undefined && !SESSION_STATES.includes(estado))) {
-      return res.status(400).json({ message: 'materiaId, fecha y duracion son obligatorios' });
+    const validationError = validateStudySessionInput({ materiaId, fecha, duracion, descripcion, estado });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     // Verificar que la materia pertenece al usuario
@@ -103,11 +97,12 @@ const updateStudySession = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    if ((fecha !== undefined && !isValidDate(fecha)) ||
-      (duracion !== undefined && !isPositiveInteger(duracion)) ||
-      (descripcion !== undefined && descripcion !== null && !isNonEmptyString(descripcion)) ||
-      (estado !== undefined && !SESSION_STATES.includes(estado))) {
-      return res.status(400).json({ message: 'Los datos de la sesión no son válidos' });
+    const validationError = validateStudySessionInput(
+      { fecha, duracion, descripcion, estado },
+      true,
+    );
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     const session = await StudySession.findOne({

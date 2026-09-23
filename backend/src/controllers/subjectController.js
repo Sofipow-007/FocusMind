@@ -1,9 +1,5 @@
 const { Subject } = require('../models');
-const {
-  isBoolean,
-  isNonEmptyString,
-  validateSchedule,
-} = require('../utils/validation');
+const { validateSubjectInput } = require('../validators/subjectValidator');
 
 const createSubject = async (req, res) => {
   try {
@@ -14,10 +10,9 @@ const createSubject = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const scheduleError = validateSchedule({ diaEstudio, horaInicio, horaFin });
-    if (!isNonEmptyString(nombre) || (favorita !== undefined && !isBoolean(favorita)) ||
-      (prioritaria !== undefined && !isBoolean(prioritaria)) || scheduleError) {
-      return res.status(400).json({ message: scheduleError || 'Los datos de la materia no son válidos' });
+    const validationError = validateSubjectInput({ nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     const subject = await Subject.create({
@@ -88,11 +83,12 @@ const updateSubject = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const scheduleError = validateSchedule({ diaEstudio, horaInicio, horaFin });
-    if ((nombre !== undefined && !isNonEmptyString(nombre)) ||
-      (favorita !== undefined && !isBoolean(favorita)) ||
-      (prioritaria !== undefined && !isBoolean(prioritaria)) || scheduleError) {
-      return res.status(400).json({ message: scheduleError || 'Los datos de la materia no son válidos' });
+    const validationError = validateSubjectInput(
+      { nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin },
+      true,
+    );
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     const subject = await Subject.findOne({
