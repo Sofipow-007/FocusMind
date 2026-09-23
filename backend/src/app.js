@@ -3,12 +3,13 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const routes = require('./routes');
 const { sequelize } = require('./config');
+const envConfig = require('./config/env');
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: envConfig.frontendUrl,
   credentials: true,
 }));
 app.use(express.json());
@@ -19,7 +20,7 @@ let dbReady = false;
 
 // Sincronizar base de datos (sin bloquear el arranque)
 const initializeDatabase = async () => {
-  if (process.env.NODE_ENV === 'development' && process.env.SKIP_DB_SYNC !== 'true') {
+  if (envConfig.nodeEnv === 'development' && process.env.SKIP_DB_SYNC !== 'true') {
     try {
       await sequelize.sync({ alter: false });
       console.log('✓ Base de datos sincronizada');
@@ -29,7 +30,7 @@ const initializeDatabase = async () => {
       console.warn(`Detalles: ${error.message}`);
       console.warn('Continuando sin BD. Para usar BD, configura MySQL y establece credenciales correctas');
     }
-  } else if (process.env.NODE_ENV !== 'development') {
+  } else if (envConfig.isProduction) {
     try {
       await sequelize.sync({ alter: false });
       dbReady = true;

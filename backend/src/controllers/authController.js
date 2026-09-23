@@ -1,11 +1,11 @@
 const bcrypt = require('bcrypt');
 const { signToken } = require('../utils/jwt');
 const { User } = require('../models');
-
-const COOKIE_NAME = 'focusmind_session';
+const { isNonEmptyString, isValidEmail } = require('../utils/validation');
+const envConfig = require('../config/env');
 
 function getCookieMaxAge() {
-  const match = String(process.env.JWT_EXPIRES_IN || '7d').match(/^(\d+)([dhm])$/);
+  const match = String(envConfig.jwtExpiresIn).match(/^(\d+)([dhm])$/);
   if (!match) return undefined;
 
   const units = { m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 };
@@ -13,10 +13,10 @@ function getCookieMaxAge() {
 }
 
 function setSessionCookie(res, token) {
-  res.cookie(COOKIE_NAME, token, {
+  res.cookie(envConfig.cookieName, token, {
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: envConfig.isProduction ? 'strict' : 'lax',
+    secure: envConfig.isProduction,
     maxAge: getCookieMaxAge(),
   });
 }
@@ -25,7 +25,7 @@ const register = async (req, res) => {
   try {
     const { email, password, nombre } = req.body || {};
 
-    if (!email || !password || !nombre) {
+    if (!isNonEmptyString(nombre) || !isValidEmail(email) || !isNonEmptyString(password)) {
       return res.status(400).json({ message: 'Nombre, email y password son obligatorios' });
     }
 
@@ -63,7 +63,7 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body || {};
 
-    if (!email || !password) {
+    if (!isValidEmail(email) || !isNonEmptyString(password)) {
       return res.status(400).json({ message: 'Email y password son obligatorios' });
     }
 
@@ -114,10 +114,10 @@ const me = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  res.clearCookie(COOKIE_NAME, {
+  res.clearCookie(envConfig.cookieName, {
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: envConfig.isProduction ? 'strict' : 'lax',
+    secure: envConfig.isProduction,
   });
 
   return res.status(200).json({ message: 'Sesión cerrada correctamente' });

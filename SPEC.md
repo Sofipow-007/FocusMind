@@ -300,7 +300,7 @@ npm run lint
 1. ✅ Configurar Sequelize y la conexión a MySQL.
 2. ⚠️ Crear modelos y relaciones; faltan migraciones y seeders formales.
 3. ⚠️ Implementar JWT con cookie HttpOnly, registro, login, `me`, logout y middleware; faltan pruebas completas y endurecimiento del secreto.
-4. ⚠️ Validar propiedad mediante `usuarioId`; faltan pruebas de aislamiento y cascadas.
+4. ⚠️ Validar propiedad mediante `usuarioId`; validaciones de entrada iniciales implementadas, faltan pruebas de aislamiento y cascadas.
 5. ⏳ Probar formalmente el contrato de API de autenticación descrito en la sección 7.1.
 
 ### Etapa 3 — Funcionalidades principales (backend parcial)

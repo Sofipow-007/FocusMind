@@ -1,4 +1,11 @@
 const { Note, Subject } = require('../models');
+const {
+  NOTE_ORIGINS,
+  NOTE_STATES,
+  NOTE_TYPES,
+  isNonEmptyString,
+  isPositiveInteger,
+} = require('../utils/validation');
 
 const createNote = async (req, res) => {
   try {
@@ -9,7 +16,10 @@ const createNote = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    if (!materiaId || !tipo || !contenido) {
+    if (!isPositiveInteger(materiaId) || !NOTE_TYPES.includes(tipo) || !isNonEmptyString(contenido) ||
+      (origen !== undefined && !NOTE_ORIGINS.includes(origen)) ||
+      (estado !== undefined && !NOTE_STATES.includes(estado)) ||
+      (tipo !== 'consulta' && estado !== undefined)) {
       return res.status(400).json({ message: 'materiaId, tipo y contenido son obligatorios' });
     }
 
@@ -26,9 +36,9 @@ const createNote = async (req, res) => {
       usuarioId: userId,
       materiaId,
       tipo,
-      contenido,
+      contenido: contenido.trim(),
       origen: origen || 'usuario',
-      estado: estado || 'pendiente',
+      estado: tipo === 'consulta' ? (estado || 'pendiente') : null,
     });
 
     return res.status(201).json({ message: 'Nota creada correctamente', note });
@@ -98,6 +108,11 @@ const updateNote = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
+    if ((contenido !== undefined && !isNonEmptyString(contenido)) ||
+      (estado !== undefined && !NOTE_STATES.includes(estado))) {
+      return res.status(400).json({ message: 'Los datos de la nota no son válidos' });
+    }
+
     const note = await Note.findOne({
       where: { id, usuarioId: userId },
     });
@@ -106,8 +121,12 @@ const updateNote = async (req, res) => {
       return res.status(404).json({ message: 'Nota no encontrada' });
     }
 
+    if (estado !== undefined && note.tipo !== 'consulta') {
+      return res.status(400).json({ message: 'El estado solo aplica a notas de tipo consulta' });
+    }
+
     await note.update({
-      contenido: contenido !== undefined ? contenido : note.contenido,
+      contenido: contenido !== undefined ? contenido.trim() : note.contenido,
       estado: estado !== undefined ? estado : note.estado,
     });
 

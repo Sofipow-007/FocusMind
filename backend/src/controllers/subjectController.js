@@ -1,4 +1,9 @@
 const { Subject } = require('../models');
+const {
+  isBoolean,
+  isNonEmptyString,
+  validateSchedule,
+} = require('../utils/validation');
 
 const createSubject = async (req, res) => {
   try {
@@ -9,15 +14,17 @@ const createSubject = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    if (!nombre) {
-      return res.status(400).json({ message: 'El nombre de la materia es obligatorio' });
+    const scheduleError = validateSchedule({ diaEstudio, horaInicio, horaFin });
+    if (!isNonEmptyString(nombre) || (favorita !== undefined && !isBoolean(favorita)) ||
+      (prioritaria !== undefined && !isBoolean(prioritaria)) || scheduleError) {
+      return res.status(400).json({ message: scheduleError || 'Los datos de la materia no son válidos' });
     }
 
     const subject = await Subject.create({
       usuarioId: userId,
-      nombre,
-      favorita: favorita || false,
-      prioritaria: prioritaria || false,
+      nombre: nombre.trim(),
+      favorita: favorita ?? false,
+      prioritaria: prioritaria ?? false,
       diaEstudio: diaEstudio || null,
       horaInicio: horaInicio || null,
       horaFin: horaFin || null,
@@ -81,6 +88,13 @@ const updateSubject = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
+    const scheduleError = validateSchedule({ diaEstudio, horaInicio, horaFin });
+    if ((nombre !== undefined && !isNonEmptyString(nombre)) ||
+      (favorita !== undefined && !isBoolean(favorita)) ||
+      (prioritaria !== undefined && !isBoolean(prioritaria)) || scheduleError) {
+      return res.status(400).json({ message: scheduleError || 'Los datos de la materia no son válidos' });
+    }
+
     const subject = await Subject.findOne({
       where: { id, usuarioId: userId },
     });
@@ -90,7 +104,7 @@ const updateSubject = async (req, res) => {
     }
 
     await subject.update({
-      nombre: nombre !== undefined ? nombre : subject.nombre,
+      nombre: nombre !== undefined ? nombre.trim() : subject.nombre,
       favorita: favorita !== undefined ? favorita : subject.favorita,
       prioritaria: prioritaria !== undefined ? prioritaria : subject.prioritaria,
       diaEstudio: diaEstudio !== undefined ? diaEstudio : subject.diaEstudio,
