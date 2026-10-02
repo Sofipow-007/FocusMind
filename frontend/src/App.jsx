@@ -1,26 +1,33 @@
 import { useEffect, useState } from 'react'
 
-import { getHealth } from './services/api'
+import AppLayout from './components/AppLayout'
+import LoadingState from './components/LoadingState'
+import AuthPage from './pages/AuthPage'
+import CalendarPage from './pages/CalendarPage'
+import DashboardPage from './pages/DashboardPage'
+import NotesPage from './pages/NotesPage'
+import StudySessionsPage from './pages/StudySessionsPage'
+import SubjectsPage from './pages/SubjectsPage'
+import { getMe, logout } from './services/authService'
 
 function App() {
-  const [connectionState, setConnectionState] = useState('loading')
-  const [connectionMessage, setConnectionMessage] = useState('')
+  const [sessionStatus, setSessionStatus] = useState('loading')
+  const [user, setUser] = useState(null)
+  const [currentView, setCurrentView] = useState('dashboard')
 
   useEffect(() => {
     let isMounted = true
 
-    getHealth()
+    getMe()
       .then((data) => {
         if (!isMounted) return
-
-        setConnectionState('connected')
-        setConnectionMessage(data.message)
+        setUser(data.user)
+        setSessionStatus('authenticated')
       })
-      .catch((error) => {
+      .catch(() => {
         if (!isMounted) return
-
-        setConnectionState('error')
-        setConnectionMessage(error.message)
+        setUser(null)
+        setSessionStatus('anonymous')
       })
 
     return () => {
@@ -28,30 +35,51 @@ function App() {
     }
   }, [])
 
-  const statusContent = {
-    loading: {
-      label: 'Conectando con la API',
-      message: 'Verificando disponibilidad del backend...',
-    },
-    connected: {
-      label: 'API conectada',
-      message: connectionMessage,
-    },
-    error: {
-      label: 'API no disponible',
-      message: connectionMessage,
-    },
-  }[connectionState]
+  async function handleLogout() {
+    try {
+      await logout()
+    } catch {
+      // La cookie puede haber expirado; igual se vuelve a login.
+    }
+    setUser(null)
+    setCurrentView('dashboard')
+    setSessionStatus('anonymous')
+  }
+
+  if (sessionStatus === 'loading') {
+    return (
+      <main style={{ padding: '2rem' }}>
+        <LoadingState label="Comprobando sesión..." />
+      </main>
+    )
+  }
+
+  if (sessionStatus === 'anonymous') {
+    return <AuthPage onAuthenticated={(nextUser) => {
+      setUser(nextUser)
+      setCurrentView('dashboard')
+      setSessionStatus('authenticated')
+    }} />
+  }
+
+  const views = {
+    dashboard: <DashboardPage user={user} onNavigate={setCurrentView} />,
+    subjects: <SubjectsPage />,
+    sessions: <StudySessionsPage onNavigate={setCurrentView} />,
+    notes: <NotesPage onNavigate={setCurrentView} />,
+    calendar: <CalendarPage onNavigate={setCurrentView} />,
+  }
 
   return (
-    <main>
-      <h1>FocusMind</h1>
-      <section className={`status status-${connectionState}`} aria-live="polite">
-        <p className="status-label">{statusContent.label}</p>
-        <p>{statusContent.message}</p>
-      </section>
-    </main>
-  );
+    <AppLayout
+      user={user}
+      currentView={currentView}
+      onNavigate={setCurrentView}
+      onLogout={handleLogout}
+    >
+      {views[currentView]}
+    </AppLayout>
+  )
 }
 
-export default App;
+export default App

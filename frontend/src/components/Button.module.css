@@ -1,0 +1,35 @@
+.button {
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.button:disabled {
+  background: var(--action-bg-disabled);
+  color: var(--color-primary-400);
+  cursor: not-allowed;
+}
+
+.primary {
+  background: var(--action-bg);
+  color: var(--text-on-primary);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--action-bg-hover);
+}
+
+.primary:active:not(:disabled) {
+  background: var(--action-bg-active);
+}
+
+.secondary {
+  background: transparent;
+  color: var(--color-primary-300);
+  border-color: var(--border-strong);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--color-primary-100);
+}

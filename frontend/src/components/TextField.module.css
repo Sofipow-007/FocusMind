@@ -1,0 +1,14 @@
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field input,
+.field textarea,
+.field select {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}

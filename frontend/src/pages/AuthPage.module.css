@@ -1,0 +1,12 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-3);
+}
+
+.panel {
+  width: min(28rem, 100%);
+  display: grid;
+  gap: var(--space-2);
+}

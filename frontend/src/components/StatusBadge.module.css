@@ -1,0 +1,22 @@
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.success {
+  background: var(--status-success-bg);
+  color: var(--status-success-text);
+}
+
+.alert {
+  background: var(--status-alert-bg);
+  color: var(--status-alert-text);
+}
+
+.neutral {
+  background: var(--color-primary-100);
+  color: var(--color-primary-400);
+  border: 1px solid var(--border-default);
+}

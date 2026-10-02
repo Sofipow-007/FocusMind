@@ -1,0 +1,16 @@
+.message {
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+}
+
+.error {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.success {
+  color: var(--status-success-text);
+  background: var(--status-success-bg);
+}
