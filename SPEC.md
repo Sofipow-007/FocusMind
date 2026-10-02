@@ -81,7 +81,7 @@ Este documento registra las decisiones técnicas tomadas en la etapa de scaffold
 | Capa          | Tecnología                  | Estado actual |
 | ------------- | --------------------------- | ----------------- |
 | Backend       | Node.js + Express           | ✅ API y CRUD inicial |
-| Frontend      | React + Vite                | ⚠️ Solo health check |
+| Frontend      | React + Vite                | ⚠️ Pantallas base (esqueleto) |
 | Base de datos | MySQL + Sequelize.js        | ✅ Conexion y modelos iniciales |
 | Autenticación | JWT + bcrypt                | ⚠️ Cookie HttpOnly implementada; pruebas y endurecimiento pendientes |
 | Contenedores  | Docker + Docker Compose     | ⚠️ MySQL en Compose; app pendiente |
@@ -188,9 +188,15 @@ Las siguientes librerías se utilizan actualmente en el backend:
 
 ### 4.8 Sin librerías adicionales en frontend
 
-**Decisión:** Solo `react` y `react-dom` como dependencias de producción.
+**Decisión:** Solo `react` y `react-dom` como dependencias de producción. El sistema visual usa variables CSS en `:root` y CSS Modules. No se usa Tailwind ni librerías de UI. La navegación entre pantallas es un cambio de vista en React, sin React Router.
 
-**Motivo:** No se agregó React Router, axios ni librerías de UI hasta definir las pantallas y flujos en etapas posteriores.
+**Motivo:** Seis pantallas de escritorio no justifican un framework de CSS ni un router. Los tokens de marca quedan centralizados y el JWT sigue viajando solo en cookie HttpOnly.
+
+### 4.12 Tokens de color y pantallas base
+
+**Paleta (sin alterar):** primario `#D9C8E6`, `#9E82B2`, `#664480`, `#36194C`, `#200733`; acento `#5F9786`; alerta `#EBDDA9`; neutro `#323232`.
+
+**Pantallas:** Login (incluye registro), Dashboard (incluye próximos exámenes), Materias, Sesiones, Notas, Calendario (incluye gestión completa de exámenes). El pulido visual queda para la Etapa 4.
 
 ### 4.9 Persistencia local de prototipo
 
@@ -295,22 +301,27 @@ npm run lint
 3. Verificar el endpoint `GET /api/health`.
 4. Mantener esta etapa sin base de datos, autenticación ni lógica de negocio.
 
-### Etapa 2 — Base de datos y autenticación (en progreso)
+### Etapa 2 — Base de datos y autenticación (cerrada)
 
 1. ✅ Configurar Sequelize y la conexión a MySQL.
-2. ⚠️ Crear modelos y relaciones; faltan migraciones y seeders formales.
-3. ⚠️ Implementar JWT con cookie HttpOnly, registro, login, `me`, logout y middleware; faltan pruebas completas y endurecimiento del secreto.
-4. ⚠️ Validar propiedad mediante `usuarioId`; validaciones de entrada iniciales implementadas, faltan pruebas de aislamiento y cascadas.
-5. ⏳ Probar formalmente el contrato de API de autenticación descrito en la sección 7.1.
+2. ✅ Preparar configuración de migraciones (`.sequelizerc`, `src/config/database.js`) y estructura inicial.
+3. ✅ Crear modelos, relaciones y migraciones iniciales.
+4. ✅ Implementar JWT con cookie HttpOnly, registro, login, `me`, logout y middleware.
+5. ✅ Validar propiedad mediante `usuarioId` y pruebas de aislamiento/cascada.
+6. ✅ Probar formalmente el contrato de API de autenticación descrito en la sección 7.1.
 
-### Etapa 3 — Funcionalidades principales (backend parcial)
+**Criterio de cierre:** la etapa 2 queda cerrada cuando el backend mantiene la autenticación y el acceso por usuario, con pruebas automatizadas y migraciones funcionales sobre MySQL.
 
-1. ✅ Implementar CRUD de Materias.
-2. ✅ Implementar registro y consulta de Sesiones.
-3. ⚠️ Implementar Exámenes; falta la interfaz de recordatorios.
-4. ✅ Implementar Notas y filtros básicos.
-5. ⚠️ Favoritos y prioridades tienen campos; faltan calendario, racha y estadísticas por semana/mes.
-6. ⏳ Crear las pantallas y componentes de estos flujos.
+### Etapa 3 — Funcionalidades principales (siguiente paso)
+
+1. 🔜 Implementar y revisar la capa de servicios para materias, sesiones, notas y exámenes.
+2. 🔜 Completar la capa de validación para los flujos de negocio restantes.
+3. 🔜 Revisar y cerrar la lógica de estadísticas avanzadas por semana/mes.
+4. 🔜 Agregar racha y recordatorios de exámenes dentro de la lógica de negocio.
+5. 🔜 Definir el flujo concreto de calendario semanal y eventos recurrentes.
+6. 🔜 Implementar el frontend funcional para login/registro, dashboard, materias, sesiones, notas y calendario.
+
+**Bloque actual:** la Etapa 2 queda cerrada y la Etapa 3 inicia con la consolidación de la lógica del negocio antes de completar la interfaz.
 
 ### Etapa 4 — Interfaz final y despliegue local (pendiente)
 
