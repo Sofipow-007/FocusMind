@@ -1,4 +1,4 @@
-const { StudySession, Subject } = require('../models');
+const studySessionService = require('../services/studySessionService');
 const { validateStudySessionInput } = require('../validators/studySessionValidator');
 
 const createStudySession = async (req, res) => {
@@ -15,23 +15,17 @@ const createStudySession = async (req, res) => {
       return res.status(400).json({ message: validationError });
     }
 
-    // Verificar que la materia pertenece al usuario
-    const subject = await Subject.findOne({
-      where: { id: materiaId, usuarioId: userId },
-    });
-
-    if (!subject) {
-      return res.status(404).json({ message: 'Materia no encontrada' });
-    }
-
-    const session = await StudySession.create({
-      usuarioId: userId,
+    const session = await studySessionService.createStudySession(userId, {
       materiaId,
       fecha,
       duracion,
-      descripcion: descripcion?.trim() || '',
-      estado: estado || 'planificada',
+      descripcion,
+      estado,
     });
+
+    if (!session) {
+      return res.status(404).json({ message: 'Materia no encontrada' });
+    }
 
     return res.status(201).json({ message: 'Sesión de estudio creada correctamente', session });
   } catch (error) {
@@ -49,12 +43,7 @@ const getStudySessions = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const where = { usuarioId: userId };
-    if (materiaId) {
-      where.materiaId = materiaId;
-    }
-
-    const sessions = await StudySession.findAll({ where });
+    const sessions = await studySessionService.getStudySessions(userId, materiaId);
 
     return res.status(200).json(sessions);
   } catch (error) {
@@ -72,9 +61,7 @@ const getStudySessionById = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const session = await StudySession.findOne({
-      where: { id, usuarioId: userId },
-    });
+    const session = await studySessionService.getStudySessionById(userId, id);
 
     if (!session) {
       return res.status(404).json({ message: 'Sesión de estudio no encontrada' });
@@ -105,20 +92,16 @@ const updateStudySession = async (req, res) => {
       return res.status(400).json({ message: validationError });
     }
 
-    const session = await StudySession.findOne({
-      where: { id, usuarioId: userId },
+    const session = await studySessionService.updateStudySession(userId, id, {
+      fecha,
+      duracion,
+      descripcion,
+      estado,
     });
 
     if (!session) {
       return res.status(404).json({ message: 'Sesión de estudio no encontrada' });
     }
-
-    await session.update({
-      fecha: fecha !== undefined ? fecha : session.fecha,
-      duracion: duracion !== undefined ? duracion : session.duracion,
-      descripcion: descripcion !== undefined ? descripcion : session.descripcion,
-      estado: estado !== undefined ? estado : session.estado,
-    });
 
     return res.status(200).json({ message: 'Sesión de estudio actualizada correctamente', session });
   } catch (error) {
@@ -136,15 +119,10 @@ const deleteStudySession = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const session = await StudySession.findOne({
-      where: { id, usuarioId: userId },
-    });
-
-    if (!session) {
+    const deleted = await studySessionService.deleteStudySession(userId, id);
+    if (!deleted) {
       return res.status(404).json({ message: 'Sesión de estudio no encontrada' });
     }
-
-    await session.destroy();
 
     return res.status(200).json({ message: 'Sesión de estudio eliminada correctamente' });
   } catch (error) {

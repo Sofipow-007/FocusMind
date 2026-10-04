@@ -1,4 +1,5 @@
 :root {
+  --color-primary-50: #f3edf9;
   --color-primary-100: #d9c8e6;
   --color-primary-200: #9e82b2;
   --color-primary-300: #664480;
@@ -9,15 +10,23 @@
   --color-neutral: #323232;
   --color-on-dark: #ffffff;
 
-  --bg-app: var(--color-primary-100);
-  --bg-surface: var(--color-on-dark);
-  --bg-muted: var(--color-primary-100);
+  --bg-app: #f3edf9;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f7f0fb;
+  --bg-muted: #e7dcef;
   --text-primary: var(--color-neutral);
+  --text-muted: #5f5f6b;
   --text-brand: var(--color-primary-400);
   --text-on-primary: var(--color-on-dark);
   --text-disabled: var(--color-primary-300);
   --border-default: var(--color-primary-200);
   --border-strong: var(--color-primary-300);
+  --button-primary: var(--color-primary-300);
+  --button-primary-hover: var(--color-primary-400);
+  --button-primary-active: var(--color-primary-500);
+  --button-primary-disabled: var(--color-primary-200);
+  --button-secondary: var(--color-primary-100);
+  --button-secondary-hover: var(--color-primary-50);
   --action-bg: var(--color-primary-300);
   --action-bg-hover: var(--color-primary-400);
   --action-bg-active: var(--color-primary-500);
@@ -27,13 +36,17 @@
   --status-alert-bg: var(--color-alert);
   --status-alert-text: var(--color-neutral);
   --focus-ring: var(--color-primary-400);
+  --shadow-soft: 0 0.5rem 1.25rem rgba(54, 25, 76, 0.12);
+  --shadow-strong: 0 1rem 2rem rgba(54, 25, 76, 0.18);
 
   --space-1: 0.5rem;
   --space-2: 1rem;
   --space-3: 1.5rem;
   --space-4: 2rem;
-  --radius: 0.5rem;
-  --font: system-ui, sans-serif;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 *,
@@ -70,6 +83,11 @@ textarea {
   font: inherit;
 }
 
+img {
+  max-width: 100%;
+  display: block;
+}
+
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
@@ -86,6 +104,7 @@ textarea {
   z-index: 10;
   padding: var(--space-1) var(--space-2);
   background: var(--bg-surface);
+  border-radius: var(--radius-sm);
 }
 
 .stack {
@@ -108,22 +127,25 @@ textarea {
 .card {
   padding: var(--space-3);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   background: var(--bg-surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .muted {
-  color: var(--text-disabled);
+  color: var(--text-muted);
 }
 
 .page-title {
   color: var(--text-brand);
   font-size: 1.75rem;
+  font-weight: 700;
 }
 
 .section-title {
   color: var(--text-brand);
   font-size: 1.15rem;
+  font-weight: 700;
 }
 
 .form-grid {
@@ -149,7 +171,7 @@ textarea {
   min-height: 10rem;
   padding: var(--space-1);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   background: var(--bg-surface);
 }
 
@@ -168,7 +190,7 @@ textarea {
 }
 
 .block-chip {
-  background: var(--color-primary-100);
+  background: var(--bg-surface-alt);
   border: 1px solid var(--border-default);
 }
 

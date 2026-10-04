@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { StudySession } = require('../models');
+const statsService = require('../services/statsService');
 const { getStudyTimeStats } = require('./statsController');
 
 function createMockResponse() {
@@ -24,12 +24,12 @@ function createMockResponse() {
 test('responde 401 sin consultar la base de datos cuando falta req.user.userId', async () => {
   // Valida el caso inválido: sin usuario autenticado el controller debe cortar
   // antes de acceder a Sequelize y devolver el mismo contrato de error 401.
-  const originalFindAll = StudySession.findAll;
-  let findAllCalled = false;
+  const originalGetStudyTimeStats = statsService.getStudyTimeStats;
+  let serviceCalled = false;
 
-  StudySession.findAll = async () => {
-    findAllCalled = true;
-    return [];
+  statsService.getStudyTimeStats = async () => {
+    serviceCalled = true;
+    return {};
   };
 
   try {
@@ -40,18 +40,22 @@ test('responde 401 sin consultar la base de datos cuando falta req.user.userId',
 
     assert.equal(res.statusCode, 401);
     assert.deepEqual(res.body, { message: 'No autorizado' });
-    assert.equal(findAllCalled, false);
+    assert.equal(serviceCalled, false);
   } finally {
-    StudySession.findAll = originalFindAll;
+    statsService.getStudyTimeStats = originalGetStudyTimeStats;
   }
 });
 
 test('devuelve estadísticas en cero cuando el usuario no tiene sesiones completadas', async () => {
   // Valida el caso límite: usuario autenticado con consulta vacía debe responder 200
   // con totales en cero y porMateria vacío, sin errores.
-  const originalFindAll = StudySession.findAll;
+  const originalGetStudyTimeStats = statsService.getStudyTimeStats;
 
-  StudySession.findAll = async () => [];
+  statsService.getStudyTimeStats = async () => ({
+    totalMinutos: 0,
+    totalSesiones: 0,
+    porMateria: [],
+  });
 
   try {
     const req = { user: { userId: 1 } };
@@ -66,6 +70,6 @@ test('devuelve estadísticas en cero cuando el usuario no tiene sesiones complet
       porMateria: [],
     });
   } finally {
-    StudySession.findAll = originalFindAll;
+    statsService.getStudyTimeStats = originalGetStudyTimeStats;
   }
 });

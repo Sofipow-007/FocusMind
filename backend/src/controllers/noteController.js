@@ -1,4 +1,4 @@
-const { Note, Subject } = require('../models');
+const noteService = require('../services/noteService');
 const { validateNoteInput, validateNoteUpdateInput } = require('../validators/noteValidator');
 
 const createNote = async (req, res) => {
@@ -15,23 +15,10 @@ const createNote = async (req, res) => {
       return res.status(400).json({ message: validationError });
     }
 
-    // Verificar que la materia pertenece al usuario
-    const subject = await Subject.findOne({
-      where: { id: materiaId, usuarioId: userId },
-    });
-
-    if (!subject) {
+    const note = await noteService.createNote(userId, { materiaId, tipo, contenido, origen, estado });
+    if (!note) {
       return res.status(404).json({ message: 'Materia no encontrada' });
     }
-
-    const note = await Note.create({
-      usuarioId: userId,
-      materiaId,
-      tipo,
-      contenido: contenido.trim(),
-      origen: origen || 'usuario',
-      estado: tipo === 'consulta' ? (estado || 'pendiente') : null,
-    });
 
     return res.status(201).json({ message: 'Nota creada correctamente', note });
   } catch (error) {
@@ -49,15 +36,7 @@ const getNotes = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const where = { usuarioId: userId };
-    if (materiaId) {
-      where.materiaId = materiaId;
-    }
-    if (tipo) {
-      where.tipo = tipo;
-    }
-
-    const notes = await Note.findAll({ where });
+    const notes = await noteService.getNotes(userId, { materiaId, tipo });
 
     return res.status(200).json(notes);
   } catch (error) {
@@ -75,9 +54,7 @@ const getNoteById = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const note = await Note.findOne({
-      where: { id, usuarioId: userId },
-    });
+    const note = await noteService.getNoteById(userId, id);
 
     if (!note) {
       return res.status(404).json({ message: 'Nota no encontrada' });
@@ -105,22 +82,16 @@ const updateNote = async (req, res) => {
       return res.status(400).json({ message: validationError });
     }
 
-    const note = await Note.findOne({
-      where: { id, usuarioId: userId },
-    });
+    const result = await noteService.updateNote(userId, id, { contenido, estado });
+    const { note } = result;
 
     if (!note) {
       return res.status(404).json({ message: 'Nota no encontrada' });
     }
 
-    if (estado !== undefined && note.tipo !== 'consulta') {
-      return res.status(400).json({ message: 'El estado solo aplica a notas de tipo consulta' });
+    if (result.error) {
+      return res.status(400).json({ message: result.error });
     }
-
-    await note.update({
-      contenido: contenido !== undefined ? contenido.trim() : note.contenido,
-      estado: estado !== undefined ? estado : note.estado,
-    });
 
     return res.status(200).json({ message: 'Nota actualizada correctamente', note });
   } catch (error) {
@@ -138,15 +109,10 @@ const deleteNote = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const note = await Note.findOne({
-      where: { id, usuarioId: userId },
-    });
-
-    if (!note) {
+    const deleted = await noteService.deleteNote(userId, id);
+    if (!deleted) {
       return res.status(404).json({ message: 'Nota no encontrada' });
     }
-
-    await note.destroy();
 
     return res.status(200).json({ message: 'Nota eliminada correctamente' });
   } catch (error) {
