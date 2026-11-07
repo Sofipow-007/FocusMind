@@ -6,6 +6,12 @@ Aplicación que permitir que los estudiantes de secundaria/universidad organicen
 
 Consultá [SPEC.md](./SPEC.md) para la documentación técnica completa.
 
+### Documentación del proyecto
+
+- [Arquitectura](./ARCHITECTURE.md): estructura y responsabilidades de las capas.
+- [Tareas y roadmap](./TASKS.md): estado de etapas y trabajo pendiente.
+- [Flujo SDD](./specs/README.md): cómo especificar, planificar y verificar cambios.
+
 ### Backend
 
 ```bash
@@ -33,4 +39,3 @@ npm run build
 npm run lint
 npm run test:storage
 ```
-

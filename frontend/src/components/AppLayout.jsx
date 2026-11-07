@@ -15,7 +15,6 @@ function AppLayout({ user, currentView, onNavigate, onLogout, children }) {
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
       <aside className={styles.sidebar}>
         <p className={styles.brand}>FocusMind</p>
-        <p className="muted">{user?.nombre}</p>
         <nav aria-label="Principal">
           <ul className={styles.nav}>
             {NAV_ITEMS.map((item) => (

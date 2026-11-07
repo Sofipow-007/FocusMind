@@ -13,7 +13,7 @@ You act as a **Senior Tech Lead specializing in React**, not as a generic code g
 
 **FocusMind** is a full-stack web application that allows students to log and organize study sessions by subject, set a weekly calendar routine, take notes and track questions related to each subject, and receive reminders for upcoming exams.
 
-**Current stage:** Stage 1 — backend and frontend scaffolding. No business logic implemented yet.
+**Current stage:** Stage 2 is reported as closed in `SPEC.md`; Stage 3 — core features — is the next step. `SPEC.md` takes precedence if this summary becomes outdated.
 
 **Confirmed vs. pending stack:**
 
@@ -21,9 +21,9 @@ You act as a **Senior Tech Lead specializing in React**, not as a generic code g
 |---|---|---|
 | Server | Node.js + Express | ✅ Scaffold created |
 | Interface | React + Vite | ✅ Scaffold created |
-| Database | MySQL + Sequelize | ⏳ Deps installed, not configured |
-| Authentication | JWT + bcrypt | ⏳ Deps installed, not configured |
-| Containers | Docker + Docker Compose | ⏳ Deferred to a later stage |
+| Database | MySQL + Sequelize | ✅ Configured; core models and migrations exist |
+| Authentication | JWT + bcrypt | ✅ HttpOnly cookie flow reported complete; hardening follow-up is tracked in `TASKS.md` |
+| Containers | Docker + Docker Compose | ⚠️ Development MySQL Compose only; full application containers pending |
 
 `SPEC.md` is the project's technical source of truth. In the event of any conflict between what is stated here and what `SPEC.md` says, `SPEC.md` takes precedence.
 
@@ -34,7 +34,7 @@ This is the most important section for avoiding over-engineering. At this stage,
 - Do not add libraries without clear justification.
 - Do not create final UI screens if the task is infrastructure-related.
 - Do not mix backend and frontend work in the same task unless explicitly requested.
-- Do not implement authentication, databases, or Docker until the corresponding stage calls for it (see Roadmap, section 14).
+- Do not proceed to a later roadmap stage without the user's explicit direction (see `SPEC.md` and `TASKS.md`).
 
 ## 4. Repository map and responsibilities
 
@@ -42,25 +42,29 @@ This is the most important section for avoiding over-engineering. At this stage,
 FocusMind/
 ├── backend/
 │   └── src/
-│       ├── config/       # Configuration (DB, JWT, etc.)
-│       ├── controllers/  # HTTP controllers
-│       ├── middleware/   # Auth, validation, etc.
-│       ├── models/       # Sequelize models
-│       ├── routes/       # Route definitions
-│       └── utils/        # Shared utilities
+│       ├── config/       # Environment and database configuration
+│       ├── controllers/  # HTTP request/response coordination
+│       ├── middleware/   # Authentication and shared request middleware
+│       ├── migrations/   # Versioned database schema changes
+│       ├── models/       # Sequelize entities and relations
+│       ├── routes/       # Endpoint definitions by resource
+│       ├── seeders/      # Development data
+│       ├── services/     # Domain operations and data access coordination
+│       ├── utils/        # Shared utilities
+│       └── validators/   # Request input validation
 └── frontend/
     └── src/
-        ├── components/   # Reusable components
-        ├── pages/        # Views/pages
-        ├── services/     # HTTP clients / API
+        ├── components/   # Reusable presentation components
+        ├── pages/        # Application views
+        ├── services/     # HTTP clients and resource services
         ├── hooks/        # Custom hooks
-        └── utils/        # Utilities
+        └── utils/        # Shared presentation utilities
 ```
 
 Layer rules:
 - HTTP calls reside solely in `frontend/src/services/`, never within components.
-- Backend business logic resides in `controllers/`, not in `app.js` or `server.js`.
-- Do not mix responsibilities between folders (e.g., do not put UI logic in `services/`, or DB queries in `controllers/` without going through `models/`).
+- Backend request handling follows `routes/` → `middleware/` and `validators/` → `controllers/` → `services/` → `models/`.
+- Keep business logic out of `app.js` and `server.js`; do not put UI logic in frontend `services/`.
 
 ## 5. Frontend conventions (React)
 
@@ -79,7 +83,7 @@ Layer rules:
 - The API base URL is derived from `VITE_API_URL`; never hardcode it in the source code.
 - Backend responses and errors must follow a consistent and predictable format.
 - Do not hardcode tokens in components or `services/`.
-- When authentication is implemented (stage 2), the JWT must be handled outside the DOM and never logged to the console.
+- The JWT is handled outside the DOM, never read or written by frontend JavaScript, and never logged to the console.
 
 ## 7. Backend conventions (coordination)
 
@@ -104,7 +108,7 @@ Before marking a task as complete:
 - The build does not break (`npm run build` for the frontend, where applicable).
 - There is no dead code or unused imports.
 - A visually finished UI is not considered "done" if the underlying functional flow has not been tested.
-- Unit/integration tests: to be defined and incorporated when the project enters the core feature stage (not required in the current scaffold).
+- Run the relevant existing tests (`npm test` in `backend/`; `npm run test:storage` in `frontend/`) and add tests with new business behavior as appropriate.
 
 ## 10. Git, commits, and PRs
 
@@ -123,18 +127,17 @@ Before marking a task as complete:
 ## 12. Recommended workflow
 
 For any significant task, the agent must:
-1. Read `SPEC.md` before starting.
-2. Confirm the task scope with the user.
-3. Identify which layer(s) are affected (frontend, backend, or both).
-4. Propose a minimal approach and explain it.
-5. Wait for approval before implementing major changes. 6. Implement.
-7. Verify (run, build, check that nothing existing breaks).
-8. Document any new technical decisions in `SPEC.md`.
+1. Read `SPEC.md`, `ARCHITECTURE.md`, `TASKS.md`, and the applicable feature documents under `specs/`.
+2. Confirm the task scope with the user when it is ambiguous; create or update SDD artifacts following `specs/README.md`.
+3. Identify the affected layers and use the smallest complete implementation.
+4. Review the scope and seek approval before major implementation or a new technical decision.
+5. Implement against the agreed acceptance criteria and verify the relevant behavior.
+6. Update `SPEC.md` for approved global decisions/contracts, `TASKS.md` for roadmap status, and the feature SDD artifacts with verification results.
 
 ## 13. Explicit anti-patterns
 
 - Do not place `fetch`/`axios` calls directly inside UI components.
-- Do not create final screens during the scaffolding or infrastructure stages.
+- Do not create final screens before the roadmap reaches the UI-polishing stage.
 - Do not duplicate logic between the frontend and backend.
 - Do not introduce global state management (Redux, Zustand, complex Context) prematurely or without a concrete need.
 - Do not mix ad-hoc styles without a defined system.
@@ -142,10 +145,10 @@ For any significant task, the agent must:
 
 ## 14. Roadmap and priorities by stage
 
-1. **Stage 1 — Scaffold** ✅ (backend + initial frontend, no business logic)
-2. **Stage 2 — Database and authentication** (Sequelize, models, migrations, JWT, registration/login)
-3. **Stage 3 — Core features** (subjects, study sessions, notes, calendar, streaks, statistics)
-4. **Stage 4 — Final UI and Docker** (interface polishing, Dockerfile + docker-compose for backend/frontend/DB)
+1. **Stage 1 — Scaffold** ✅ (backend and initial frontend)
+2. **Stage 2 — Database and authentication** ✅ (reported closed in `SPEC.md`; follow-up hardening is tracked in `TASKS.md`)
+3. **Stage 3 — Core features** 🔜 (subjects, study sessions, notes, calendar, streaks, statistics)
+4. **Stage 4 — Final UI and Docker** ⏳ (interface polishing and Dockerfiles/Compose for the application)
 
 The agent must not proceed to a later stage without the user explicitly indicating so.
 
