@@ -7,7 +7,7 @@
 ## Alineación con el roadmap (`SPEC.md`, sección 7)
 
 - **Etapa afectada:** Etapa 3.
-- **Estado de la etapa:** en progreso.
+- **Estado de la etapa:** completada.
 - **Tareas del roadmap relacionadas:** 3.4 Calendario semanal y 3.5 Frontend conectado a la API en [TASKS.md](../../TASKS.md); ítem 6 de sección 7 en [SPEC.md](../../SPEC.md).
 
 ## Capas y archivos afectados

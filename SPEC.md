@@ -1,6 +1,6 @@
 # FocusMind — Especificación técnica
 
-> Estado actual: Etapa 3 en progreso. CRUD autenticado, validaciones base, estadísticas por semana/mes UTC, racha, recordatorios visuales de exámenes y eventos planificados en la semana actual están implementados. La verificación integral de los flujos y el endurecimiento de autenticación siguen pendientes de revisión.
+> Estado actual: Etapa 3 completada y verificada. El alcance aprobado de endurecimiento de autenticación de Etapa 2 está implementado; la limitación de intentos queda diferida hasta acordar un almacén compartido. La Etapa 4 no se inicia hasta autorización explícita.
 
 ## 1. Descripción general
 
@@ -83,7 +83,7 @@ Este documento registra las decisiones técnicas tomadas en la etapa de scaffold
 | Backend       | Node.js + Express           | ✅ API autenticada, CRUD y estadísticas base |
 | Frontend      | React + Vite                | ✅ Flujos principales conectados; refinamiento pendiente |
 | Base de datos | MySQL + Sequelize.js        | ✅ Conexión, modelos y migraciones iniciales |
-| Autenticación | JWT + bcrypt                | ⚠️ Cookie HttpOnly implementada; pruebas y endurecimiento pendientes |
+| Autenticación | JWT + bcrypt                | ✅ Cookie HttpOnly, pruebas y endurecimiento acordado; rate limiting diferido |
 | Contenedores  | Docker + Docker Compose     | ⚠️ MySQL en Compose; app pendiente |
 
 
@@ -286,7 +286,9 @@ cd backend
 npm test
 
 cd ../frontend
+npm run test:calendar
 npm run test:storage
+npm run build
 npm run lint
 ```
 
@@ -301,7 +303,7 @@ npm run lint
 3. Verificar el endpoint `GET /api/health`.
 4. Mantener esta etapa sin base de datos, autenticación ni lógica de negocio.
 
-### Etapa 2 — Base de datos y autenticación (cerrada)
+### Etapa 2 — Base de datos y autenticación (base y endurecimiento acordado completados)
 
 1. ✅ Configurar Sequelize y la conexión a MySQL.
 2. ✅ Preparar configuración de migraciones (`.sequelizerc`, `src/config/database.js`) y estructura inicial.
@@ -312,7 +314,7 @@ npm run lint
 
 **Criterio de cierre:** la etapa 2 queda cerrada cuando el backend mantiene la autenticación y el acceso por usuario, con pruebas automatizadas y migraciones funcionales sobre MySQL.
 
-### Etapa 3 — Funcionalidades principales (en progreso)
+### Etapa 3 — Funcionalidades principales (completada)
 
 1. ✅ Implementar servicios y CRUD autenticado para materias, sesiones, notas y exámenes.
 2. ✅ Implementar validaciones base y pruebas HTTP de CRUD, entradas inválidas y aislamiento por usuario.
@@ -321,9 +323,9 @@ npm run lint
 5. ✅ Definir y verificar recordatorios visuales de exámenes: todos los futuros ordenados por fecha; los vencidos se conservan en gestión, no en recordatorios.
 6. ✅ Mostrar sesiones planificadas de la semana actual como eventos puntuales distintos de la rutina semanal recurrente.
 7. ✅ Conectar los flujos principales de autenticación, dashboard, materias, sesiones, notas y calendario con la API.
-8. 🔜 Completar pruebas integradas de flujos y estados de interfaz.
+8. ✅ Completar pruebas integradas de flujos y estados de interfaz.
 
-**Bloque actual:** las tareas 3.1 a 3.4 del backlog están implementadas. El trabajo restante de Etapa 3 se centra en completar y verificar recorridos integrados y estados de interfaz.
+**Estado:** las tareas 3.1 a 3.5 están implementadas y verificadas. La limitación de intentos de autenticación queda diferida hasta acordar un mecanismo de almacenamiento compartido. No iniciar la Etapa 4 sin autorización explícita.
 
 ### Etapa 4 — Interfaz final y despliegue local (pendiente)
 
@@ -364,6 +366,15 @@ npm run lint
   - `SameSite: Strict` o `Lax` según necesidad de navegación cruzada.
   - `Secure: true` en producción (solo se envía sobre HTTPS).
   - Expiración alineada con `JWT_EXPIRES_IN`.
+  - En producción, `JWT_SECRET` es obligatorio y debe tener al menos 32 caracteres; la aplicación falla al iniciar si falta o no cumple el mínimo. En desarrollo/pruebas se conserva el valor alternativo local.
+  - `JWT_EXPIRES_IN` debe ser un entero positivo seguido de `m`, `h` o `d`; su duración se aplica coherentemente al JWT y a `Max-Age` de la cookie.
+  - El middleware protegido acepta exclusivamente la cookie de sesión, no `Authorization: Bearer`.
+  - En solicitudes autenticadas mutantes (`POST`, `PUT`, `PATCH`, `DELETE`), `Origin` debe coincidir con el origen configurado en `FRONTEND_URL`; si falta o difiere, se responde `403`.
+
+- Política de contraseña: las nuevas cuentas requieren al menos 12 caracteres y un máximo de 72 bytes UTF-8. El login mantiene compatibilidad con contraseñas históricas más cortas y rechaza entradas mayores a 72 bytes.
+- Los conflictos de unicidad de email, incluidos registros concurrentes, responden `409`.
+- Logout elimina la cookie del navegador, pero no revoca server-side un JWT copiado antes del cierre; ese token permanece válido hasta expirar. No se implementa denylist/estado de sesión.
+- No se aplica rate limiting a login/registro hasta elegir un almacén compartido; un limitador en memoria por instancia no fue aprobado.
 
 - Errores consistentes:
   - Validación de campos faltantes o inválidos → `400 Bad Request`
@@ -389,6 +400,9 @@ npm run lint
   - Acceso a `/api/auth/me` con cookie válida → devuelve datos del usuario.
   - Acceso a ruta protegida sin cookie o con cookie inválida/expirada → `401`
   - Logout → cookie invalidada, siguiente acceso a `/api/auth/me` devuelve `401`.
+  - Evidencia actual: pruebas de integración cubren registro, duplicados, login válido/inválido, `/me` con/sin cookie, cookie HttpOnly y logout con cookie expirada. La verificación de navegador cubrió recuperación de red y reintento.
+  - Las pruebas de integración también verifican cookie-only, validación de `Origin`, conflictos de registro concurrentes y expiración coherente de cookie.
+  - El rate limiting queda diferido; antes de habilitar varias instancias se debe seleccionar un almacén compartido y política de límites.
 
 ### 7.2 Contrato de estadísticas de estudio para Etapa 3
 

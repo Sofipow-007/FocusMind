@@ -7,7 +7,7 @@
 ## Alineación con el roadmap (`SPEC.md`, sección 7)
 
 - **Etapa afectada:** Etapa 3.
-- **Estado de la etapa:** en progreso.
+- **Estado de la etapa:** completada.
 - **Tareas del roadmap relacionadas:** 3.3 Exámenes y recordatorios en [TASKS.md](../../TASKS.md) y el ítem 5 de la sección 7 de [SPEC.md](../../SPEC.md).
 
 ## Capas y archivos afectados

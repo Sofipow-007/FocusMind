@@ -22,7 +22,17 @@ async function registerUser({ nombre, email, password }) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await User.create({ nombre: nombre.trim(), email: email.trim(), passwordHash });
+  let user;
+  try {
+    user = await User.create({ nombre: nombre.trim(), email: email.trim(), passwordHash });
+  } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      const conflict = new Error('El email ya está registrado');
+      conflict.code = EMAIL_EXISTS;
+      throw conflict;
+    }
+    throw error;
+  }
   const token = signToken({ userId: user.id, email: user.email });
 
   return { user: toPublicUser(user), token };

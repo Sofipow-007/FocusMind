@@ -15,7 +15,7 @@ Este archivo resume el roadmap a partir de [SPEC.md](./SPEC.md) y el estado obse
 - [x] Verificar arranque de proyectos y endpoint `GET /api/health` (estado documentado en `SPEC.md`).
 - [x] Definir estructura, convenciones y decisiones iniciales en `SPEC.md`.
 
-## Etapa 2 — Base de datos y autenticación (cerrada en `SPEC.md`)
+## Etapa 2 — Base de datos y autenticación (completada; rate limiting diferido)
 
 - [x] Configurar Sequelize y conexión MySQL.
 - [x] Preparar migraciones y estructura de configuración de Sequelize.
@@ -26,12 +26,17 @@ Este archivo resume el roadmap a partir de [SPEC.md](./SPEC.md) y el estado obse
 
 ### Seguimiento de estado de Etapa 2
 
-El encabezado de `SPEC.md` también menciona que el endurecimiento y las pruebas de autenticación están pendientes, aunque su checklist declara cerrada la etapa. Antes de considerar terminado ese seguimiento:
+La implementación base y el contrato mínimo están verificados. Se implementaron los controles aprobados para secreto/expiración JWT, cookie-only, política de contraseña, validación de Origin y conflictos concurrentes:
 
-- [ ] Aclarar y registrar en `SPEC.md` qué endurecimiento de autenticación queda pendiente y sus criterios de aceptación.
-- [ ] Ejecutar o repetir las verificaciones de autenticación correspondientes y registrar el resultado.
+- [x] Exigir secreto JWT de producción de al menos 32 caracteres y validar formatos/duración de expiración.
+- [x] Aceptar solo cookie HttpOnly y validar `Origin` para solicitudes autenticadas mutantes.
+- [x] Aplicar mínimo de 12 caracteres y máximo de 72 bytes UTF-8 a nuevas contraseñas; login mantiene compatibilidad con cuentas anteriores.
+- [x] Convertir conflictos únicos concurrentes de email a `409`.
+- [x] Documentar y probar que logout limpia cookie pero no revoca un JWT previamente copiado.
+- [x] Ejecutar pruebas de autenticación y controles aprobados en `focusmind_test`.
+- [ ] Diferido: acordar rate limiting con almacenamiento compartido antes de desplegar varias instancias; detalle en [`specs/006-auth-hardening-followup/`](./specs/006-auth-hardening-followup/).
 
-## Etapa 3 — Funcionalidades principales (en progreso)
+## Etapa 3 — Funcionalidades principales (completada)
 
 ### 3.1 API, persistencia y validaciones
 
@@ -70,14 +75,12 @@ El encabezado de `SPEC.md` también menciona que el endurecimiento y las pruebas
 - [x] Notas: crear, listar, editar, eliminar y filtrar por materia/tipo.
 - [x] Dashboard: resumen de estudio actual, próximos exámenes y materias destacadas.
 - [x] Calendario: mostrar rutina recurrente, sesiones planificadas y exámenes de la semana; permitir gestión de todos los exámenes.
-- [x] Las pantallas principales incluyen estados base de carga, error o vacío; falta validarlos de forma integral y consistente.
-- [ ] Completar y revisar estados de éxito/error en mutaciones, recuperación de sesión y errores de red en todos los flujos.
-- [ ] Validar los recorridos completos de usuario en frontend/API, incluidos estados de carga, error y vacío, con una base de pruebas aislada.
+- [x] Completar y revisar estados de éxito/error en mutaciones, recuperación de sesión y errores de red en los flujos conectados.
+- [x] Validar recorridos de usuario en frontend/API, incluidos estados de carga, error y vacío, sobre base de pruebas aislada.
 
 ### Orden sugerido para continuar
 
-1. Completar y verificar los recorridos restantes de Etapa 3, incluidos estados de mutación, recuperación de sesión y errores de red.
-2. Revisar el seguimiento pendiente de endurecimiento de autenticación.
+1. No iniciar la Etapa 4 hasta autorización explícita.
 
 ## Etapa 4 — Interfaz final y despliegue local
 
@@ -102,9 +105,10 @@ Una tarea se marca completa cuando su alcance y criterios se cumplen, se han eje
 
 ## Evidencia de esta revisión
 
-- Backend: `npm test` pasó 24/24, incluyendo pruebas HTTP de CRUD, filtros de exámenes próximos, orden, exámenes vencidos conservados en gestión, errores de validación, asociaciones y aislamiento por usuario.
+- Backend: `npm test` pasó 26/26, incluyendo configuración JWT, contrato HTTP de autenticación, cookie-only, validación de Origin, registro concurrente y CRUD autenticado.
 - El runner de backend crea/usa solo `focusmind_test`, fuerza `NODE_ENV=test`, limita la concurrencia de archivos y no borra tablas. Se confirmó que las pruebas dejan cero usuarios de fixture.
 - Estadísticas: pruebas unitarias cubren períodos UTC, límites inclusivos, racha anclada hoy/ayer, duplicados, huecos, sesiones no completadas y fechas futuras; la integración verifica el endpoint autenticado.
-- Frontend: `npm run build` pasó; `npm run test:calendar` pasó 4/4 y `npm run test:storage` pasó 4/4. `npm run lint` terminó con dos advertencias existentes fuera de esta modificación (`AppLayout.jsx`, `StudySessionsPage.jsx`).
+- Frontend: `npm run build` pasó; `npm run test:calendar` pasó 4/4 y `npm run test:storage` pasó 4/4. `npm run lint` terminó con una advertencia preexistente en `StudySessionsPage.jsx`.
 - Calendario: pruebas deterministas cubren semana local de lunes a domingo, límites de semana, cambio de año, estados y orden de sesiones, y filtro/orden de exámenes no vencidos.
-- Estas verificaciones no incluyen una prueba automatizada de navegador de punta a punta.
+- Recorrido integrado manual en navegador: registro, CRUD de materia/sesión/nota/examen, sesión planificada en calendario, error simulado al borrar, recuperación de sesión tras error de red y logout/reintento. Tras endurecer Origin, se volvió a verificar registro/creación de materia desde navegador. Las cuentas temporales se eliminaron al finalizar.
+- Estas verificaciones de navegador se hicieron manualmente; no se incorporó un framework automatizado de pruebas E2E.

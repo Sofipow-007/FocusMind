@@ -9,6 +9,7 @@ function TextField({
   required,
   autoComplete,
   min,
+  minLength,
   rows,
 }) {
   const inputId = id || label.toLowerCase().replace(/\s+/g, '-')
@@ -33,6 +34,7 @@ function TextField({
           required={required}
           autoComplete={autoComplete}
           min={min}
+          minLength={minLength}
         />
       )}
     </div>

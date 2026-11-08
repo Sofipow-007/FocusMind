@@ -53,11 +53,13 @@ test('la API valida entradas y limita CRUD de recursos al usuario autenticado', 
   });
   const baseUrl = `http://127.0.0.1:${server.address().port}/api`;
 
-  async function request(path, token, { method = 'GET', body } = {}) {
+  async function request(path, token, { method = 'GET', body, origin = envConfig.frontendUrl, authorization } = {}) {
     const response = await fetch(`${baseUrl}${path}`, {
       method,
       headers: {
         ...(token ? { Cookie: `${envConfig.cookieName}=${token}` } : {}),
+        ...(authorization ? { Authorization: authorization } : {}),
+        ...(origin ? { Origin: origin } : {}),
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -68,6 +70,19 @@ test('la API valida entradas y limita CRUD de recursos al usuario autenticado', 
 
   try {
     assert.equal((await request('/subjects')).status, 401);
+    assert.equal((await request('/subjects', null, {
+      authorization: `Bearer ${firstToken}`,
+    })).status, 401);
+    assert.equal((await request('/subjects', firstToken, {
+      method: 'POST',
+      origin: 'https://other.example',
+      body: { nombre: 'Origen ajeno' },
+    })).status, 403);
+    assert.equal((await request('/subjects', firstToken, {
+      method: 'POST',
+      origin: null,
+      body: { nombre: 'Origen ausente' },
+    })).status, 403);
 
     const subjectResult = await request('/subjects', firstToken, {
       method: 'POST',

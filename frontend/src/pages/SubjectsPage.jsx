@@ -24,10 +24,12 @@ function SubjectsPage() {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
+  const [feedback, setFeedback] = useState(null)
   const [subjects, setSubjects] = useState([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
 
   async function loadSubjects() {
     const data = await getSubjects()
@@ -66,6 +68,7 @@ function SubjectsPage() {
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
+    setFeedback(null)
     setIsSaving(true)
     const payload = {
       nombre: form.nombre,
@@ -76,17 +79,28 @@ function SubjectsPage() {
       horaFin: form.horaFin || null,
     }
 
+    let actionMessage
     try {
       if (editingId) {
         await updateSubject(editingId, payload)
+        actionMessage = 'Materia actualizada correctamente.'
       } else {
         await createSubject(payload)
+        actionMessage = 'Materia creada correctamente.'
       }
       setForm(EMPTY_FORM)
       setEditingId(null)
-      await loadSubjects()
     } catch (saveError) {
       setFormError(saveError.message)
+      setIsSaving(false)
+      return
+    }
+
+    try {
+      await loadSubjects()
+      setFeedback({ tone: 'success', message: actionMessage })
+    } catch (loadError) {
+      setFeedback({ tone: 'error', message: `${actionMessage} No se pudo actualizar la lista: ${loadError.message}` })
     } finally {
       setIsSaving(false)
     }
@@ -95,11 +109,23 @@ function SubjectsPage() {
   async function handleDelete(subject) {
     const confirmed = window.confirm(`Eliminar "${subject.nombre}" también borra sus sesiones, notas y exámenes. ¿Continuar?`)
     if (!confirmed) return
+    setFeedback(null)
+    setDeletingId(subject.id)
     try {
       await deleteSubject(subject.id)
-      await loadSubjects()
     } catch (deleteError) {
-      setFormError(deleteError.message)
+      setFeedback({ tone: 'error', message: deleteError.message })
+      setDeletingId(null)
+      return
+    }
+
+    try {
+      await loadSubjects()
+      setFeedback({ tone: 'success', message: 'Materia eliminada correctamente.' })
+    } catch (loadError) {
+      setFeedback({ tone: 'error', message: `Materia eliminada, pero no se pudo actualizar la lista: ${loadError.message}` })
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -109,6 +135,7 @@ function SubjectsPage() {
   return (
     <div className="stack-lg">
       <PageHeader title="Materias" />
+      {feedback ? <InlineMessage tone={feedback.tone}>{feedback.message}</InlineMessage> : null}
 
       <form className="card form-grid" onSubmit={handleSubmit}>
         <h2 className="section-title">{editingId ? 'Editar materia' : 'Nueva materia'}</h2>
@@ -147,7 +174,13 @@ function SubjectsPage() {
                 actions={(
                   <div className="row">
                     <Button variant="secondary" onClick={() => startEdit(subject)}>Editar</Button>
-                    <Button variant="secondary" onClick={() => handleDelete(subject)}>Eliminar</Button>
+                    <Button
+                      variant="secondary"
+                      disabled={deletingId === subject.id}
+                      onClick={() => handleDelete(subject)}
+                    >
+                      {deletingId === subject.id ? 'Eliminando...' : 'Eliminar'}
+                    </Button>
                   </div>
                 )}
               />

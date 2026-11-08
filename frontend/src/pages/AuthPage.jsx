@@ -70,6 +70,7 @@ function AuthPage({ onAuthenticated }) {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
+            minLength={mode === 'register' ? 12 : undefined}
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           />
           <InlineMessage>{error}</InlineMessage>

@@ -18,12 +18,14 @@ function NotesPage({ onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
+  const [feedback, setFeedback] = useState(null)
   const [subjects, setSubjects] = useState([])
   const [notes, setNotes] = useState([])
   const [filters, setFilters] = useState({ materiaId: '', tipo: '' })
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
 
   async function load(nextFilters = filters) {
     const [subjectsResult, notesResult] = await Promise.all([
@@ -69,17 +71,20 @@ function NotesPage({ onNavigate }) {
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
+    setFeedback(null)
     if (subjects.length === 0) {
       setFormError('Creá una materia antes de guardar notas.')
       return
     }
     setIsSaving(true)
 
+    let actionMessage
     try {
       if (editingId) {
         const payload = { contenido: form.contenido }
         if (form.tipo === 'consulta') payload.estado = form.estado
         await updateNote(editingId, payload)
+        actionMessage = 'Nota actualizada correctamente.'
       } else {
         const payload = {
           materiaId: Number(form.materiaId),
@@ -89,12 +94,21 @@ function NotesPage({ onNavigate }) {
         }
         if (form.tipo === 'consulta') payload.estado = form.estado
         await createNote(payload)
+        actionMessage = 'Nota creada correctamente.'
       }
       setForm(EMPTY_FORM)
       setEditingId(null)
-      await load()
     } catch (saveError) {
       setFormError(saveError.message)
+      setIsSaving(false)
+      return
+    }
+
+    try {
+      await load()
+      setFeedback({ tone: 'success', message: actionMessage })
+    } catch (loadError) {
+      setFeedback({ tone: 'error', message: `${actionMessage} No se pudo actualizar la lista: ${loadError.message}` })
     } finally {
       setIsSaving(false)
     }
@@ -106,6 +120,7 @@ function NotesPage({ onNavigate }) {
   return (
     <div className="stack-lg">
       <PageHeader title="Notas" />
+      {feedback ? <InlineMessage tone={feedback.tone}>{feedback.message}</InlineMessage> : null}
 
       {subjects.length === 0 ? (
         <EmptyState title="Necesitás una materia">
@@ -167,10 +182,25 @@ function NotesPage({ onNavigate }) {
                     estado: note.estado || 'pendiente',
                   })
                 }}>Editar</Button>
-                <Button variant="secondary" onClick={async () => {
-                  await deleteNote(note.id)
-                  await load()
-                }}>Eliminar</Button>
+                <Button variant="secondary" disabled={deletingId === note.id} onClick={async () => {
+                  setFeedback(null)
+                  setDeletingId(note.id)
+                  try {
+                    await deleteNote(note.id)
+                  } catch (deleteError) {
+                    setFeedback({ tone: 'error', message: deleteError.message })
+                    setDeletingId(null)
+                    return
+                  }
+                  try {
+                    await load()
+                    setFeedback({ tone: 'success', message: 'Nota eliminada correctamente.' })
+                  } catch (loadError) {
+                    setFeedback({ tone: 'error', message: `Nota eliminada, pero no se pudo actualizar la lista: ${loadError.message}` })
+                  } finally {
+                    setDeletingId(null)
+                  }
+                }}>{deletingId === note.id ? 'Eliminando...' : 'Eliminar'}</Button>
               </div>
             </li>
           ))}

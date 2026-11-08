@@ -19,12 +19,14 @@ function StudySessionsPage({ onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
+  const [feedback, setFeedback] = useState(null)
   const [subjects, setSubjects] = useState([])
   const [sessions, setSessions] = useState([])
   const [filter, setFilter] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
 
   async function load(materiaId = filter) {
     const [subjectsResult, sessionsResult] = await Promise.all([
@@ -79,6 +81,7 @@ function StudySessionsPage({ onNavigate }) {
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
+    setFeedback(null)
     if (subjects.length === 0) {
       setFormError('Creá una materia antes de registrar una sesión.')
       return
@@ -92,18 +95,29 @@ function StudySessionsPage({ onNavigate }) {
     }
     if (form.descripcion.trim()) payload.descripcion = form.descripcion.trim()
 
+    let actionMessage
     try {
       if (editingId) {
         const { materiaId, ...updatePayload } = payload
         await updateStudySession(editingId, updatePayload)
+        actionMessage = 'Sesión actualizada correctamente.'
       } else {
         await createStudySession(payload)
+        actionMessage = 'Sesión creada correctamente.'
       }
       setForm(EMPTY_FORM)
       setEditingId(null)
-      await load()
     } catch (saveError) {
       setFormError(saveError.message)
+      setIsSaving(false)
+      return
+    }
+
+    try {
+      await load()
+      setFeedback({ tone: 'success', message: actionMessage })
+    } catch (loadError) {
+      setFeedback({ tone: 'error', message: `${actionMessage} No se pudo actualizar la lista: ${loadError.message}` })
     } finally {
       setIsSaving(false)
     }
@@ -156,14 +170,30 @@ function StudySessionsPage({ onNavigate }) {
               </div>
               <StatusBadge label={session.estado} tone={session.estado} />
               <Button variant="secondary" onClick={() => startEdit(session)}>Editar</Button>
-              <Button variant="secondary" onClick={async () => {
-                await deleteStudySession(session.id)
-                await load()
-              }}>Eliminar</Button>
+              <Button variant="secondary" disabled={deletingId === session.id} onClick={async () => {
+                setFeedback(null)
+                setDeletingId(session.id)
+                try {
+                  await deleteStudySession(session.id)
+                } catch (deleteError) {
+                  setFeedback({ tone: 'error', message: deleteError.message })
+                  setDeletingId(null)
+                  return
+                }
+                try {
+                  await load()
+                  setFeedback({ tone: 'success', message: 'Sesión eliminada correctamente.' })
+                } catch (loadError) {
+                  setFeedback({ tone: 'error', message: `Sesión eliminada, pero no se pudo actualizar la lista: ${loadError.message}` })
+                } finally {
+                  setDeletingId(null)
+                }
+              }}>{deletingId === session.id ? 'Eliminando...' : 'Eliminar'}</Button>
             </li>
           ))}
         </ul>
       )}
+      {feedback ? <InlineMessage tone={feedback.tone}>{feedback.message}</InlineMessage> : null}
     </div>
   )
 }

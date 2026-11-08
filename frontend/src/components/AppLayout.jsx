@@ -1,4 +1,5 @@
 import Button from './Button'
+import InlineMessage from './InlineMessage'
 import styles from './AppLayout.module.css'
 
 const NAV_ITEMS = [
@@ -9,7 +10,7 @@ const NAV_ITEMS = [
   { id: 'calendar', label: 'Calendario' },
 ]
 
-function AppLayout({ user, currentView, onNavigate, onLogout, children }) {
+function AppLayout({ currentView, onNavigate, onLogout, logoutError, isLoggingOut, children }) {
   return (
     <div className={styles.shell}>
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
@@ -31,9 +32,12 @@ function AppLayout({ user, currentView, onNavigate, onLogout, children }) {
             ))}
           </ul>
         </nav>
-        <Button variant="secondary" onClick={onLogout}>Cerrar sesión</Button>
+        <Button variant="secondary" onClick={onLogout} disabled={isLoggingOut}>
+          {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+        </Button>
       </aside>
       <main id="contenido" className={styles.content}>
+        {logoutError ? <InlineMessage>{`No se pudo cerrar la sesión: ${logoutError}`}</InlineMessage> : null}
         {children}
       </main>
     </div>

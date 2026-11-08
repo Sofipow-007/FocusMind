@@ -21,12 +21,14 @@ function CalendarPage({ onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
+  const [feedback, setFeedback] = useState(null)
   const [subjects, setSubjects] = useState([])
   const [exams, setExams] = useState([])
   const [sessions, setSessions] = useState([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
 
   async function load() {
     const [subjectsResult, examsResult, sessionsResult] = await Promise.all([
@@ -60,6 +62,7 @@ function CalendarPage({ onNavigate }) {
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
+    setFeedback(null)
     if (subjects.length === 0) {
       setFormError('Creá una materia antes de cargar un examen.')
       return
@@ -71,17 +74,28 @@ function CalendarPage({ onNavigate }) {
     }
     if (form.descripcion.trim()) examPayload.descripcion = form.descripcion.trim()
 
+    let actionMessage
     try {
       if (editingId) {
         await updateExam(editingId, examPayload)
+        actionMessage = 'Examen actualizado correctamente.'
       } else {
         await createExam({ ...examPayload, materiaId: Number(form.materiaId) })
+        actionMessage = 'Examen creado correctamente.'
       }
       setForm(EMPTY_FORM)
       setEditingId(null)
-      await load()
     } catch (saveError) {
       setFormError(saveError.message)
+      setIsSaving(false)
+      return
+    }
+
+    try {
+      await load()
+      setFeedback({ tone: 'success', message: actionMessage })
+    } catch (loadError) {
+      setFeedback({ tone: 'error', message: `${actionMessage} No se pudo actualizar el calendario: ${loadError.message}` })
     } finally {
       setIsSaving(false)
     }
@@ -97,6 +111,7 @@ function CalendarPage({ onNavigate }) {
   return (
     <div className="stack-lg">
       <PageHeader title="Calendario" />
+      {feedback ? <InlineMessage tone={feedback.tone}>{feedback.message}</InlineMessage> : null}
 
       <section className="stack">
         <h2 className="section-title">Semana de estudio</h2>
@@ -180,10 +195,25 @@ function CalendarPage({ onNavigate }) {
                     descripcion: exam.descripcion || '',
                   })
                 }}>Editar</Button>
-                <Button variant="secondary" onClick={async () => {
-                  await deleteExam(exam.id)
-                  await load()
-                }}>Eliminar</Button>
+                <Button variant="secondary" disabled={deletingId === exam.id} onClick={async () => {
+                  setFeedback(null)
+                  setDeletingId(exam.id)
+                  try {
+                    await deleteExam(exam.id)
+                  } catch (deleteError) {
+                    setFeedback({ tone: 'error', message: deleteError.message })
+                    setDeletingId(null)
+                    return
+                  }
+                  try {
+                    await load()
+                    setFeedback({ tone: 'success', message: 'Examen eliminado correctamente.' })
+                  } catch (loadError) {
+                    setFeedback({ tone: 'error', message: `Examen eliminado, pero no se pudo actualizar la lista: ${loadError.message}` })
+                  } finally {
+                    setDeletingId(null)
+                  }
+                }}>{deletingId === exam.id ? 'Eliminando...' : 'Eliminar'}</Button>
               </li>
             ))}
           </ul>

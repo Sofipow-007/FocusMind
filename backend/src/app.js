@@ -52,7 +52,7 @@ initializeDatabase().catch((error) => {
 
 // Middleware para verificar disponibilidad de BD en rutas que la requieren
 app.use((req, res, next) => {
-  if (!dbReady && req.path.startsWith('/api/auth')) {
+  if (!dbReady && envConfig.nodeEnv !== 'test' && req.path.startsWith('/api/auth')) {
     return res.status(503).json({ message: 'Servicio no disponible: base de datos inicializándose' });
   }
   next();

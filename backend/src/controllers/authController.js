@@ -9,11 +9,7 @@ const { validateLoginInput, validateRegisterInput } = require('../validators/aut
 const envConfig = require('../config/env');
 
 function getCookieMaxAge() {
-  const match = String(envConfig.jwtExpiresIn).match(/^(\d+)([dhm])$/);
-  if (!match) return undefined;
-
-  const units = { m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 };
-  return Number(match[1]) * units[match[2]];
+  return envConfig.jwtExpiresInMilliseconds;
 }
 
 function setSessionCookie(res, token) {

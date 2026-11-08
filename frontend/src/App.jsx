@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import AppLayout from './components/AppLayout'
+import Button from './components/Button'
+import InlineMessage from './components/InlineMessage'
 import LoadingState from './components/LoadingState'
 import AuthPage from './pages/AuthPage'
 import CalendarPage from './pages/CalendarPage'
@@ -14,6 +16,27 @@ function App() {
   const [sessionStatus, setSessionStatus] = useState('loading')
   const [user, setUser] = useState(null)
   const [currentView, setCurrentView] = useState('dashboard')
+  const [sessionError, setSessionError] = useState('')
+  const [logoutError, setLogoutError] = useState('')
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const restoreSession = useCallback(async () => {
+    setSessionStatus('loading')
+    setSessionError('')
+    try {
+      const data = await getMe()
+      setUser(data.user)
+      setSessionStatus('authenticated')
+    } catch (error) {
+      if (error.status === 401) {
+        setUser(null)
+        setSessionStatus('anonymous')
+        return
+      }
+      setSessionError(error.message)
+      setSessionStatus('error')
+    }
+  }, [])
 
   useEffect(() => {
     let isMounted = true
@@ -24,10 +47,15 @@ function App() {
         setUser(data.user)
         setSessionStatus('authenticated')
       })
-      .catch(() => {
+      .catch((error) => {
         if (!isMounted) return
-        setUser(null)
-        setSessionStatus('anonymous')
+        if (error.status === 401) {
+          setUser(null)
+          setSessionStatus('anonymous')
+          return
+        }
+        setSessionError(error.message)
+        setSessionStatus('error')
       })
 
     return () => {
@@ -36,20 +64,33 @@ function App() {
   }, [])
 
   async function handleLogout() {
+    setIsLoggingOut(true)
+    setLogoutError('')
     try {
       await logout()
-    } catch {
-      // La cookie puede haber expirado; igual se vuelve a login.
+      setUser(null)
+      setCurrentView('dashboard')
+      setSessionStatus('anonymous')
+    } catch (error) {
+      setLogoutError(error.message)
+    } finally {
+      setIsLoggingOut(false)
     }
-    setUser(null)
-    setCurrentView('dashboard')
-    setSessionStatus('anonymous')
   }
 
   if (sessionStatus === 'loading') {
     return (
       <main style={{ padding: '2rem' }}>
         <LoadingState label="Comprobando sesión..." />
+      </main>
+    )
+  }
+
+  if (sessionStatus === 'error') {
+    return (
+      <main className="stack" style={{ padding: '2rem' }}>
+        <InlineMessage>{`No se pudo comprobar la sesión: ${sessionError}`}</InlineMessage>
+        <Button onClick={restoreSession}>Reintentar</Button>
       </main>
     )
   }
@@ -76,6 +117,8 @@ function App() {
       currentView={currentView}
       onNavigate={setCurrentView}
       onLogout={handleLogout}
+      logoutError={logoutError}
+      isLoggingOut={isLoggingOut}
     >
       {views[currentView]}
     </AppLayout>

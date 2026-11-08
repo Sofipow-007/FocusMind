@@ -1,17 +1,22 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { validateRegisterInput, validateLoginInput } = require('./authValidator');
+const { validateRegisterInput, validateLoginInput, isValidPassword } = require('./authValidator');
 const { validateSubjectInput } = require('./subjectValidator');
 const { validateStudySessionInput } = require('./studySessionValidator');
 const { validateNoteInput, validateNoteUpdateInput } = require('./noteValidator');
 const { validateExamInput } = require('./examValidator');
 
 test('valida payloads de autenticación por dominio', () => {
-  assert.equal(validateRegisterInput({ nombre: 'Ana', email: 'ana@example.com', password: 'secret' }), null);
-  assert.equal(validateRegisterInput({ nombre: '', email: 'ana@example.com', password: 'secret' }), 'Nombre, email y password son obligatorios');
+  assert.equal(validateRegisterInput({ nombre: 'Ana', email: 'ana@example.com', password: 'secretPass123' }), null);
+  assert.notEqual(validateRegisterInput({ nombre: 'Ana', email: 'ana@example.com', password: 'secret' }), null);
+  assert.equal(validateRegisterInput({ nombre: '', email: 'ana@example.com', password: 'secretPass123' }), 'Nombre y email son obligatorios');
+  assert.equal(validateRegisterInput({ nombre: 'Ana', email: 'ana@example.com', password: 'secret' }), 'La contraseña debe tener al menos 12 caracteres y no más de 72 bytes');
   assert.equal(validateLoginInput({ email: 'ana@example.com', password: 'secret' }), null);
-  assert.equal(validateLoginInput({ email: 'invalid', password: 'secret' }), 'Email y password son obligatorios');
+  assert.equal(validateLoginInput({ email: 'invalid', password: 'secret' }), 'Email válido y contraseña de hasta 72 bytes son obligatorios');
+  assert.equal(isValidPassword('é'.repeat(12), { requireMinimum: true }), true);
+  assert.equal(isValidPassword('é'.repeat(37), { requireMinimum: true }), false);
+  assert.equal(isValidPassword('short', { requireMinimum: true }), false);
 });
 
 test('valida payloads de materia, sesión y examen', () => {

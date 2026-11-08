@@ -6,7 +6,7 @@ Este documento describe la arquitectura implementada y las decisiones técnicas 
 
 FocusMind es una aplicación web full-stack para organizar materias, sesiones de estudio, notas, exámenes y estadísticas. El repositorio está organizado como un monorepo simple: API y SPA son proyectos independientes dentro de `backend/` y `frontend/`, sin workspaces ni código compartido.
 
-La Etapa 2 (persistencia MySQL y autenticación) figura como cerrada en `SPEC.md`. En la Etapa 3 ya están implementados y probados el CRUD base, las validaciones HTTP, el aislamiento de recursos y las estadísticas históricas/semanales/mensuales con racha. Quedan pendientes criterios y verificación completa de recordatorios y algunos eventos de calendario; la Etapa 4 (pulido final y contenerización completa) sigue pendiente. El alcance detallado se mantiene en [TASKS.md](./TASKS.md).
+La Etapa 2 (persistencia MySQL y autenticación) está completada con el endurecimiento aprobado; el rate limiting queda diferido hasta definir almacenamiento compartido. La Etapa 3 está implementada y verificada: CRUD, validaciones, aislamiento, estadísticas, recordatorios, calendario y flujos frontend/API. La Etapa 4 (pulido final y contenerización completa) sigue pendiente y requiere autorización explícita. El alcance detallado se mantiene en [TASKS.md](./TASKS.md).
 
 ## 2. Mapa del repositorio
 
@@ -79,7 +79,7 @@ El frontend es una SPA de React 19 compilada y servida con Vite, usando módulos
 
 La API base se obtiene de `VITE_API_URL`. `api.js` centraliza la comunicación y los servicios por recurso evitan que las pantallas implementen llamadas HTTP directamente. `storage.js`, `useLocalStorage.js` y las utilidades relacionadas sirven al prototipo/almacenamiento no sensible; desde la Etapa 2 MySQL es la fuente oficial para los datos persistidos del producto.
 
-Las pantallas presentes incluyen autenticación, dashboard, materias, sesiones, notas y calendario. El dashboard presenta estadísticas y exámenes futuros; el calendario combina las rutinas recurrentes de materias, sesiones `planificada` de la semana actual y exámenes no vencidos de esa semana. Su grilla semanal usa fechas de la zona local del navegador, mientras que la gestión conserva todos los exámenes. Los servicios HTTP existentes cargan las entidades sin llamadas directas desde componentes. La existencia de una pantalla no implica que todos sus flujos estén conectados a la API; el estado de implementación se lleva en [TASKS.md](./TASKS.md).
+Las pantallas presentes incluyen autenticación, dashboard, materias, sesiones, notas y calendario. El dashboard presenta estadísticas y exámenes futuros; el calendario combina las rutinas recurrentes de materias, sesiones `planificada` de la semana actual y exámenes no vencidos de esa semana. Su grilla semanal usa fechas de la zona local del navegador, mientras que la gestión conserva todos los exámenes. Los servicios HTTP existentes cargan las entidades sin llamadas directas desde componentes. La recuperación de sesión distingue `401` de fallos de red y permite reintentar; las mutaciones muestran confirmación/error y no descartan la sesión local cuando falla logout. La etapa 3 está funcionalmente verificada; el seguimiento de endurecimiento JWT de Etapa 2 está documentado en [TASKS.md](./TASKS.md) y `specs/006-auth-hardening-followup/`.
 
 ## 4. Persistencia y relaciones
 
@@ -91,7 +91,7 @@ Las relaciones y cascadas se definen en los modelos. El borrado de una materia e
 
 ## 5. Autenticación e integración frontend/API
 
-La autenticación usa JWT emitido por el backend y entregado al navegador en una cookie `HttpOnly`; el cliente no debe leer, guardar ni registrar el token. CORS permite el origen configurado por `FRONTEND_URL` y habilita credenciales. Las solicitudes autenticadas del frontend deben incluir credenciales para que el navegador envíe la cookie.
+La autenticación usa JWT emitido por el backend y entregado al navegador en una cookie `HttpOnly`; el cliente no debe leer, guardar ni registrar el token. El middleware protegido acepta solo esa cookie y valida `Origin` para solicitudes mutantes. CORS permite el origen configurado por `FRONTEND_URL` y habilita credenciales. En producción `JWT_SECRET` debe configurarse con al menos 32 caracteres y `JWT_EXPIRES_IN` usa duraciones positivas en minutos, horas o días.
 
 Los secretos y credenciales se configuran mediante variables de entorno documentadas en los `.env.example`. No se deben incluir valores secretos en el código ni en el frontend. Para las reglas completas del contrato de autenticación (respuestas, errores y cookie), consultar `SPEC.md`.
 
