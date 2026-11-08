@@ -1,6 +1,6 @@
 # FocusMind — Especificación técnica
 
-> Estado actual: Etapa 3 completada y verificada. El alcance aprobado de endurecimiento de autenticación de Etapa 2 está implementado; la limitación de intentos queda diferida hasta acordar un almacén compartido. La Etapa 4 no se inicia hasta autorización explícita.
+> Estado actual: Etapas 2 y 3 completadas y verificadas. Se autorizó iniciar la parte de contenedores de la Etapa 4; el pulido visual queda pendiente. La limitación de intentos de autenticación sigue diferida hasta acordar un almacén compartido.
 
 ## 1. Descripción general
 
@@ -84,7 +84,7 @@ Este documento registra las decisiones técnicas tomadas en la etapa de scaffold
 | Frontend      | React + Vite                | ✅ Flujos principales conectados; refinamiento pendiente |
 | Base de datos | MySQL + Sequelize.js        | ✅ Conexión, modelos y migraciones iniciales |
 | Autenticación | JWT + bcrypt                | ✅ Cookie HttpOnly, pruebas y endurecimiento acordado; rate limiting diferido |
-| Contenedores  | Docker + Docker Compose     | ⚠️ MySQL en Compose; app pendiente |
+| Contenedores  | Docker + Docker Compose     | ✅ Stack integrado y validado; pulido visual pendiente |
 
 
 
@@ -327,12 +327,14 @@ npm run lint
 
 **Estado:** las tareas 3.1 a 3.5 están implementadas y verificadas. La limitación de intentos de autenticación queda diferida hasta acordar un mecanismo de almacenamiento compartido. No iniciar la Etapa 4 sin autorización explícita.
 
-### Etapa 4 — Interfaz final y despliegue local (pendiente)
+### Etapa 4 — Interfaz final y despliegue local (en progreso)
 
-1. Pulir la interfaz para escritorio y sus estados de carga, error y vacío.
-2. Incorporar Dockerfiles y Docker Compose para frontend, backend y MySQL.
-3. Configurar el proxy de desarrollo de Vite hacia el API si resulta necesario.
-4. Validar el levantamiento completo del sistema mediante Docker.
+1. Pulir la interfaz para escritorio y sus estados de carga, error y vacío (pendiente).
+2. ✅ Incorporar Dockerfiles y Docker Compose para frontend, backend y MySQL; ver [specs/007-stage4-docker-compose/](./specs/007-stage4-docker-compose/).
+3. Decisión de proxy: el stack Docker usa Nginx para reenviar `/api` al backend en el mismo origen; el servidor Vite de desarrollo mantiene `VITE_API_URL` y CORS, sin proxy adicional.
+4. ✅ Validar el levantamiento integrado mediante Docker; el pulido visual sigue pendiente.
+
+El inicio de la Etapa 4 queda limitado a los contenedores autorizados; no implica comenzar el pulido visual.
 
 ### 7.1 Contrato mínimo de autenticación para Etapa 2
 

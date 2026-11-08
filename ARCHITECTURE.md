@@ -6,7 +6,7 @@ Este documento describe la arquitectura implementada y las decisiones técnicas 
 
 FocusMind es una aplicación web full-stack para organizar materias, sesiones de estudio, notas, exámenes y estadísticas. El repositorio está organizado como un monorepo simple: API y SPA son proyectos independientes dentro de `backend/` y `frontend/`, sin workspaces ni código compartido.
 
-La Etapa 2 (persistencia MySQL y autenticación) está completada con el endurecimiento aprobado; el rate limiting queda diferido hasta definir almacenamiento compartido. La Etapa 3 está implementada y verificada: CRUD, validaciones, aislamiento, estadísticas, recordatorios, calendario y flujos frontend/API. La Etapa 4 (pulido final y contenerización completa) sigue pendiente y requiere autorización explícita. El alcance detallado se mantiene en [TASKS.md](./TASKS.md).
+La Etapa 2 (persistencia MySQL y autenticación) está completada con el endurecimiento aprobado; el rate limiting queda diferido hasta definir almacenamiento compartido. La Etapa 3 está implementada y verificada: CRUD, validaciones, aislamiento, estadísticas, recordatorios, calendario y flujos frontend/API. Se autorizó iniciar la contenerización de Etapa 4; el pulido visual sigue pendiente. El alcance y estado detallados se mantienen en [TASKS.md](./TASKS.md) y [specs/007-stage4-docker-compose/](./specs/007-stage4-docker-compose/).
 
 ## 2. Mapa del repositorio
 
@@ -41,10 +41,12 @@ FocusMind/
 │   ├── scripts/           # Pruebas auxiliares de almacenamiento
 │   └── package.json
 ├── specs/                 # Artefactos SDD por cambio o funcionalidad
+├── docker-compose.yml     # Frontend, API y MySQL para stack integrado
+├── .env.docker.example    # Variables plantilla para Docker Compose
 ├── AGENTS.md              # Convenciones para agentes y desarrollo
 ├── SPEC.md                # Fuente técnica de verdad del producto
 ├── TASKS.md               # Estado del roadmap y backlog
-└── docker-compose.dev.yml # MySQL para desarrollo local
+└── docker-compose.dev.yml # MySQL exclusivo para desarrollo local
 ```
 
 Los archivos de dependencias, compilación y entorno local no forman parte del mapa funcional. Los `.env` locales no deben versionarse; las plantillas públicas son `.env.example`.
@@ -87,7 +89,7 @@ MySQL 8 es la base de datos de la aplicación y Sequelize es el ORM. La configur
 
 Las relaciones y cascadas se definen en los modelos. El borrado de una materia elimina sus sesiones, notas y exámenes; el borrado de un usuario elimina los datos que le pertenecen, de acuerdo con la política de `SPEC.md`.
 
-`docker-compose.dev.yml` levanta únicamente MySQL para desarrollo. No representa todavía el despliegue contenerizado de toda la aplicación. La configuración de desarrollo del contenedor no debe reutilizarse como configuración de producción.
+`docker-compose.dev.yml` levanta únicamente MySQL para desarrollo y conserva su volumen. `docker-compose.yml` inicia la aplicación completa con un volumen independiente para MySQL, una API no publicada al host y una SPA servida por Nginx. Nginx reenvía `/api` al backend y mantiene frontend/API bajo el mismo origen. En desarrollo con Vite no se añade proxy: se conserva `VITE_API_URL` y CORS. El stack integrado es una configuración local; no sustituye un despliegue productivo administrado.
 
 ## 5. Autenticación e integración frontend/API
 
@@ -110,7 +112,7 @@ Las decisiones y su justificación se mantienen en `SPEC.md`; esta lista resume 
 | JWT en cookie `HttpOnly` | El token no está disponible para JavaScript del navegador. |
 | Servicios HTTP por recurso en el frontend | Las vistas no acoplan presentación y transporte. |
 | CSS Modules y variables CSS | Los estilos se mantienen locales a componentes, sin framework de UI/CSS adicional. |
-| Docker Compose parcial | MySQL se puede levantar localmente; los contenedores de API e interfaz quedan para la Etapa 4. |
+| Docker Compose separado | `docker-compose.dev.yml` conserva MySQL para desarrollo; `docker-compose.yml` integra frontend Nginx, API y MySQL con almacenamiento persistente. |
 
 Una decisión que cambie contratos, dependencias, límites de capa o despliegue debe revisarse contra `SPEC.md` y registrarse allí una vez aprobada.
 

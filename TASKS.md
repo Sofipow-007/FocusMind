@@ -82,13 +82,15 @@ La implementación base y el contrato mínimo están verificados. Se implementar
 
 1. No iniciar la Etapa 4 hasta autorización explícita.
 
-## Etapa 4 — Interfaz final y despliegue local
+## Etapa 4 — Interfaz final y despliegue local (contenedores autorizados)
 
 - [ ] Pulir la interfaz de escritorio y sus estados de carga, error y vacío.
-- [ ] Crear Dockerfiles para backend y frontend.
-- [ ] Completar Docker Compose para frontend, backend y MySQL.
-- [ ] Decidir si se necesita proxy de desarrollo de Vite hacia la API y documentar la decisión.
-- [ ] Verificar el arranque integrado de toda la aplicación mediante Docker.
+- [x] Crear Dockerfiles para backend y frontend.
+- [x] Completar Docker Compose para frontend, backend y MySQL.
+- [x] Decidir y documentar el proxy: Nginx en el stack integrado; Vite conserva `VITE_API_URL` y CORS en desarrollo.
+- [x] Verificar el arranque integrado de toda la aplicación mediante Docker.
+
+El alcance de contenedores está documentado en [`specs/007-stage4-docker-compose/`](./specs/007-stage4-docker-compose/). El pulido visual sigue pendiente y no forma parte de esta autorización.
 
 ## SDD — Flujo de trabajo y documentación
 
