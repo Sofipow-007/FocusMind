@@ -1,6 +1,6 @@
 # FocusMind — Especificación técnica
 
-> Estado actual: Etapa 3 en progreso. CRUD autenticado, validaciones base, estadísticas por semana/mes UTC y racha están implementados. Quedan por cerrar recordatorios, detalles del calendario y verificación integral de los flujos. El endurecimiento de autenticación sigue pendiente de revisión.
+> Estado actual: Etapa 3 en progreso. CRUD autenticado, validaciones base, estadísticas por semana/mes UTC, racha, recordatorios visuales de exámenes y eventos planificados en la semana actual están implementados. La verificación integral de los flujos y el endurecimiento de autenticación siguen pendientes de revisión.
 
 ## 1. Descripción general
 
@@ -318,12 +318,12 @@ npm run lint
 2. ✅ Implementar validaciones base y pruebas HTTP de CRUD, entradas inválidas y aislamiento por usuario.
 3. ✅ Agregar estadísticas históricas, semanales y mensuales agrupadas por materia.
 4. ✅ Calcular racha de días consecutivos usando sesiones completadas.
-5. 🔜 Definir el comportamiento completo de recordatorios de exámenes y cerrar su verificación.
-6. 🔜 Cerrar los criterios del calendario semanal, incluida la presencia de sesiones planificadas como eventos.
+5. ✅ Definir y verificar recordatorios visuales de exámenes: todos los futuros ordenados por fecha; los vencidos se conservan en gestión, no en recordatorios.
+6. ✅ Mostrar sesiones planificadas de la semana actual como eventos puntuales distintos de la rutina semanal recurrente.
 7. ✅ Conectar los flujos principales de autenticación, dashboard, materias, sesiones, notas y calendario con la API.
 8. 🔜 Completar pruebas integradas de flujos y estados de interfaz.
 
-**Bloque actual:** las tareas 3.1 y 3.2 del backlog están implementadas. El foco siguiente es acordar los criterios de recordatorios y eventos de calendario (3.3/3.4) y verificar los recorridos completos.
+**Bloque actual:** las tareas 3.1 a 3.4 del backlog están implementadas. El trabajo restante de Etapa 3 se centra en completar y verificar recorridos integrados y estados de interfaz.
 
 ### Etapa 4 — Interfaz final y despliegue local (pendiente)
 
@@ -408,6 +408,20 @@ El endpoint autenticado `GET /api/stats/study-time` devuelve estadísticas del u
 - Si no hay sesiones completadas, los totales son cero, `porMateria` está vacío, `rachaDias` vale cero y `ultimoDiaEstudiado` es `null`.
 - La autenticación y el filtro por propietario siguen siendo obligatorios; el token no forma parte de la respuesta.
 
+### 7.3 Recordatorios de exámenes y eventos del calendario
+
+- Los recordatorios de exámenes son visuales y se muestran dentro de la aplicación; no se envían notificaciones push ni correo.
+- Se consideran próximos todos los exámenes cuya fecha/hora sea igual o posterior al momento actual, sin horizonte máximo. El dashboard los muestra ordenados por fecha/hora ascendente, con título, materia y fecha/hora.
+- Los exámenes vencidos dejan de mostrarse como recordatorios, pero permanecen en la lista de gestión del calendario, donde se pueden editar y eliminar.
+- El calendario presenta los exámenes no vencidos de la semana actual junto con su título, materia y fecha/hora.
+
+### 7.4 Calendario semanal y sesiones planificadas
+
+- La grilla representa la semana calendario actual, de lunes a domingo, calculada en la zona horaria local del navegador y con la fecha local en cada encabezado.
+- Los bloques semanales configurados en materias continúan representando rutinas recurrentes.
+- Las sesiones con estado `planificada` cuya fecha/hora cae dentro de la semana actual aparecen como eventos puntuales, separados visualmente de la rutina; muestran materia, hora y duración.
+- Las sesiones `completada` o `cancelada`, y las sesiones fuera de la semana actual no se muestran como eventos de sesión en esta grilla.
+- Los exámenes próximos de la semana pueden coexistir con la rutina y las sesiones planificadas. La gestión conserva todos los exámenes, incluidos los vencidos.
 
 
 ## 8. Requisitos del entorno

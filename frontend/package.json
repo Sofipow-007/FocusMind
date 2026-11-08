@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test:calendar": "node --test scripts/calendar.test.js",
     "test:storage": "node --test scripts/storage.test.js",
     "preview": "vite preview"
   },

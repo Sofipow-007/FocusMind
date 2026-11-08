@@ -10,8 +10,10 @@ import StatusBadge from '../components/StatusBadge'
 import TextField from '../components/TextField'
 import { createExam, deleteExam, getExams, updateExam } from '../services/examService'
 import { getSubjects } from '../services/subjectService'
-import { formatDateTime, fromDateTimeLocalValue, toDateTimeLocalValue, weekdayFromIso } from '../utils/dates'
-import { subjectNameById, WEEKDAYS } from '../utils/labels'
+import { getStudySessions } from '../services/studySessionService'
+import { getCalendarWeek, toLocalDateIso } from '../utils/calendar'
+import { formatDateTime, fromDateTimeLocalValue, toDateTimeLocalValue } from '../utils/dates'
+import { subjectNameById } from '../utils/labels'
 
 const EMPTY_FORM = { materiaId: '', titulo: '', fecha: '', descripcion: '' }
 
@@ -21,23 +23,30 @@ function CalendarPage({ onNavigate }) {
   const [formError, setFormError] = useState('')
   const [subjects, setSubjects] = useState([])
   const [exams, setExams] = useState([])
+  const [sessions, setSessions] = useState([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
 
   async function load() {
-    const [subjectsResult, examsResult] = await Promise.all([getSubjects(), getExams()])
+    const [subjectsResult, examsResult, sessionsResult] = await Promise.all([
+      getSubjects(),
+      getExams(),
+      getStudySessions(),
+    ])
     setSubjects(subjectsResult)
     setExams(examsResult)
+    setSessions(sessionsResult)
   }
 
   useEffect(() => {
     let isMounted = true
-    Promise.all([getSubjects(), getExams()])
-      .then(([subjectsResult, examsResult]) => {
+    Promise.all([getSubjects(), getExams(), getStudySessions()])
+      .then(([subjectsResult, examsResult, sessionsResult]) => {
         if (!isMounted) return
         setSubjects(subjectsResult)
         setExams(examsResult)
+        setSessions(sessionsResult)
         setStatus('ready')
       })
       .catch((loadError) => {
@@ -56,19 +65,17 @@ function CalendarPage({ onNavigate }) {
       return
     }
     setIsSaving(true)
-    const payload = {
-      materiaId: Number(form.materiaId),
+    const examPayload = {
       titulo: form.titulo,
       fecha: fromDateTimeLocalValue(form.fecha),
     }
-    if (form.descripcion.trim()) payload.descripcion = form.descripcion.trim()
+    if (form.descripcion.trim()) examPayload.descripcion = form.descripcion.trim()
 
     try {
       if (editingId) {
-        const { materiaId, ...updatePayload } = payload
-        await updateExam(editingId, updatePayload)
+        await updateExam(editingId, examPayload)
       } else {
-        await createExam(payload)
+        await createExam({ ...examPayload, materiaId: Number(form.materiaId) })
       }
       setForm(EMPTY_FORM)
       setEditingId(null)
@@ -84,6 +91,8 @@ function CalendarPage({ onNavigate }) {
   if (status === 'error') return <InlineMessage>{error}</InlineMessage>
 
   const scheduledSubjects = subjects.filter((subject) => subject.diaEstudio)
+  const weekDays = getCalendarWeek({ sessions, exams })
+  const hasWeekEvents = weekDays.some((day) => day.sessions.length > 0 || day.exams.length > 0)
 
   return (
     <div className="stack-lg">
@@ -91,25 +100,38 @@ function CalendarPage({ onNavigate }) {
 
       <section className="stack">
         <h2 className="section-title">Semana de estudio</h2>
-        {scheduledSubjects.length === 0 && exams.length === 0 ? (
+        {scheduledSubjects.length === 0 && !hasWeekEvents ? (
           <EmptyState title="La semana está vacía">
-            Definí un bloque en Materias o cargá un examen debajo.
+            Definí un bloque en Materias, planificá una sesión o cargá un examen debajo.
             <Button variant="secondary" onClick={() => onNavigate('subjects')}>Ir a materias</Button>
           </EmptyState>
         ) : (
           <div className="week-grid">
-            {WEEKDAYS.map((day) => (
-              <section key={day} className="week-day">
-                <h3>{day}</h3>
-                {subjects.filter((subject) => subject.diaEstudio === day).map((subject) => (
+            {weekDays.map((day) => (
+              <section key={day.weekday} className="week-day">
+                <h3>
+                  {day.weekday[0].toUpperCase() + day.weekday.slice(1)}{' '}
+                  <time dateTime={toLocalDateIso(day.date)}>
+                    {day.date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                  </time>
+                </h3>
+                {subjects.filter((subject) => subject.diaEstudio === day.weekday).map((subject) => (
                   <p key={`s-${subject.id}`} className="block-chip">
                     {subject.nombre}<br />
                     {subject.horaInicio || ''}–{subject.horaFin || ''}
                   </p>
                 ))}
-                {exams.filter((exam) => weekdayFromIso(exam.fecha) === day).map((exam) => (
+                {day.sessions.map((session) => (
+                  <p key={`planned-${session.id}`} className="session-chip">
+                    Sesión planificada<br />
+                    {subjectNameById(subjects, session.materiaId)}<br />
+                    {formatDateTime(session.fecha)} · {session.duracion} min
+                  </p>
+                ))}
+                {day.exams.map((exam) => (
                   <p key={`e-${exam.id}`} className="exam-chip">
                     {exam.titulo}<br />
+                    {subjectNameById(subjects, exam.materiaId)}<br />
                     {formatDateTime(exam.fecha)}
                   </p>
                 ))}

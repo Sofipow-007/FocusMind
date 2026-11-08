@@ -194,20 +194,44 @@ test('la API valida entradas y limita CRUD de recursos al usuario autenticado', 
 
     assert.equal((await request('/exams?materiaId=0', firstToken)).status, 400);
     assert.equal((await request('/exams?upcoming=sometimes', firstToken)).status, 400);
+    const now = Date.now();
+    const pastExamResult = await request('/exams', firstToken, {
+      method: 'POST',
+      body: {
+        materiaId: subjectId,
+        titulo: 'Examen vencido',
+        fecha: new Date(now - 24 * 60 * 60 * 1000).toISOString(),
+      },
+    });
     const examResult = await request('/exams', firstToken, {
       method: 'POST',
       body: {
         materiaId: subjectId,
-        titulo: 'Parcial',
-        fecha: '2030-12-01T09:00:00Z',
+        titulo: 'Parcial próximo',
+        fecha: new Date(now + 24 * 60 * 60 * 1000).toISOString(),
       },
     });
+    const distantExamResult = await request('/exams', firstToken, {
+      method: 'POST',
+      body: {
+        materiaId: subjectId,
+        titulo: 'Parcial lejano',
+        fecha: new Date(now + 60 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    });
+    assert.equal(pastExamResult.status, 201);
     assert.equal(examResult.status, 201);
-    const examId = examResult.data.exam.id;
+    assert.equal(distantExamResult.status, 201);
+    const examId = distantExamResult.data.exam.id;
     assert.equal((await request(`/exams/${examId}`, firstToken)).status, 200);
     assert.equal((await request('/exams', secondToken)).data.length, 0);
     assert.equal((await request(`/exams/not-an-id`, firstToken)).status, 400);
-    assert.equal((await request(`/exams?materiaId=${subjectId}&upcoming=true`, firstToken)).data.length, 1);
+    const allExams = (await request('/exams', firstToken)).data;
+    const upcomingExams = (await request(`/exams?materiaId=${subjectId}&upcoming=true`, firstToken)).data;
+    assert.equal(allExams.length, 3);
+    assert.equal(allExams[0].titulo, 'Examen vencido');
+    assert.equal(upcomingExams.length, 2);
+    assert.deepEqual(upcomingExams.map(({ titulo }) => titulo), ['Parcial próximo', 'Parcial lejano']);
     assert.equal((await request('/exams', firstToken, {
       method: 'POST',
       body: {
@@ -229,6 +253,12 @@ test('la API valida entradas y limita CRUD de recursos al usuario autenticado', 
       method: 'DELETE',
     })).status, 404);
     assert.equal((await request(`/exams/${examId}`, firstToken, {
+      method: 'DELETE',
+    })).status, 200);
+    assert.equal((await request(`/exams/${examResult.data.exam.id}`, firstToken, {
+      method: 'DELETE',
+    })).status, 200);
+    assert.equal((await request(`/exams/${pastExamResult.data.exam.id}`, firstToken, {
       method: 'DELETE',
     })).status, 200);
 

@@ -52,15 +52,15 @@ El encabezado de `SPEC.md` también menciona que el endurecimiento y las pruebas
 
 - [x] Crear, listar, editar y eliminar exámenes asociados a una materia del usuario.
 - [x] Filtrar exámenes futuros y mostrar próximos exámenes en el dashboard; el calendario también los presenta.
-- [ ] Definir en SDD el comportamiento esperado de “recordatorio”: horizonte temporal, orden, presentación y tratamiento de exámenes vencidos; no incluye push.
-- [ ] Verificar el flujo de recordatorios con API y UI una vez acordados sus criterios.
+- [x] Definir en SDD el comportamiento esperado de “recordatorio”: todos los futuros, orden ascendente, presentación en dashboard/calendario y vencidos fuera de recordatorios pero conservados en gestión; no incluye push.
+- [x] Verificar el filtro API de próximos exámenes y los eventos de la semana en frontend.
 
 ### 3.4 Calendario semanal
 
 - [x] Guardar en materias un único bloque semanal opcional (día/hora de inicio/fin) y mostrarlo en la grilla semanal.
 - [x] Mostrar exámenes en el día correspondiente del calendario.
-- [ ] Definir en SDD si las sesiones de estudio con estado `planificada` deben aparecer como eventos puntuales, además del bloque recurrente de la materia.
-- [ ] Completar y probar los flujos del calendario según los criterios acordados.
+- [x] Definir en SDD que las sesiones `planificada` de la semana actual aparecen como eventos puntuales además del bloque recurrente.
+- [x] Mostrar fechas locales de lunes a domingo y probar filtros por semana, estado y orden.
 
 ### 3.5 Frontend conectado a la API
 
@@ -69,16 +69,15 @@ El encabezado de `SPEC.md` también menciona que el endurecimiento y las pruebas
 - [x] Sesiones: crear, listar, editar, eliminar y filtrar por materia.
 - [x] Notas: crear, listar, editar, eliminar y filtrar por materia/tipo.
 - [x] Dashboard: resumen de estudio actual, próximos exámenes y materias destacadas.
-- [x] Calendario: mostrar rutina semanal y permitir gestión de exámenes.
+- [x] Calendario: mostrar rutina recurrente, sesiones planificadas y exámenes de la semana; permitir gestión de todos los exámenes.
 - [x] Las pantallas principales incluyen estados base de carga, error o vacío; falta validarlos de forma integral y consistente.
 - [ ] Completar y revisar estados de éxito/error en mutaciones, recuperación de sesión y errores de red en todos los flujos.
 - [ ] Validar los recorridos completos de usuario en frontend/API, incluidos estados de carga, error y vacío, con una base de pruebas aislada.
 
 ### Orden sugerido para continuar
 
-1. Acordar y especificar los criterios de recordatorio de exámenes, sin notificaciones push.
-2. Acordar si las sesiones planificadas aparecen en el calendario junto con la rutina semanal.
-3. Completar y verificar los recorridos restantes de Etapa 3.
+1. Completar y verificar los recorridos restantes de Etapa 3, incluidos estados de mutación, recuperación de sesión y errores de red.
+2. Revisar el seguimiento pendiente de endurecimiento de autenticación.
 
 ## Etapa 4 — Interfaz final y despliegue local
 
@@ -103,8 +102,9 @@ Una tarea se marca completa cuando su alcance y criterios se cumplen, se han eje
 
 ## Evidencia de esta revisión
 
-- Backend: `npm test` pasó 24/24, incluyendo pruebas HTTP sobre CRUD, errores de validación, asociaciones de materias y aislamiento por usuario.
+- Backend: `npm test` pasó 24/24, incluyendo pruebas HTTP de CRUD, filtros de exámenes próximos, orden, exámenes vencidos conservados en gestión, errores de validación, asociaciones y aislamiento por usuario.
 - El runner de backend crea/usa solo `focusmind_test`, fuerza `NODE_ENV=test`, limita la concurrencia de archivos y no borra tablas. Se confirmó que las pruebas dejan cero usuarios de fixture.
 - Estadísticas: pruebas unitarias cubren períodos UTC, límites inclusivos, racha anclada hoy/ayer, duplicados, huecos, sesiones no completadas y fechas futuras; la integración verifica el endpoint autenticado.
-- Frontend: `npm run build` pasó; `npm run test:storage` pasó 4/4. `npm run lint` terminó con tres advertencias existentes fuera de esta modificación (`AppLayout.jsx`, `CalendarPage.jsx`, `StudySessionsPage.jsx`).
+- Frontend: `npm run build` pasó; `npm run test:calendar` pasó 4/4 y `npm run test:storage` pasó 4/4. `npm run lint` terminó con dos advertencias existentes fuera de esta modificación (`AppLayout.jsx`, `StudySessionsPage.jsx`).
+- Calendario: pruebas deterministas cubren semana local de lunes a domingo, límites de semana, cambio de año, estados y orden de sesiones, y filtro/orden de exámenes no vencidos.
 - Estas verificaciones no incluyen una prueba automatizada de navegador de punta a punta.

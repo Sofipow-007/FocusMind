@@ -79,7 +79,7 @@ El frontend es una SPA de React 19 compilada y servida con Vite, usando módulos
 
 La API base se obtiene de `VITE_API_URL`. `api.js` centraliza la comunicación y los servicios por recurso evitan que las pantallas implementen llamadas HTTP directamente. `storage.js`, `useLocalStorage.js` y las utilidades relacionadas sirven al prototipo/almacenamiento no sensible; desde la Etapa 2 MySQL es la fuente oficial para los datos persistidos del producto.
 
-Las pantallas presentes incluyen autenticación, dashboard, materias, sesiones, notas y calendario. La existencia de una pantalla no implica que todos sus flujos estén conectados a la API; el estado de implementación se lleva en [TASKS.md](./TASKS.md).
+Las pantallas presentes incluyen autenticación, dashboard, materias, sesiones, notas y calendario. El dashboard presenta estadísticas y exámenes futuros; el calendario combina las rutinas recurrentes de materias, sesiones `planificada` de la semana actual y exámenes no vencidos de esa semana. Su grilla semanal usa fechas de la zona local del navegador, mientras que la gestión conserva todos los exámenes. Los servicios HTTP existentes cargan las entidades sin llamadas directas desde componentes. La existencia de una pantalla no implica que todos sus flujos estén conectados a la API; el estado de implementación se lleva en [TASKS.md](./TASKS.md).
 
 ## 4. Persistencia y relaciones
 
