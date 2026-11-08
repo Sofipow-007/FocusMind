@@ -1,5 +1,6 @@
 const examService = require('../services/examService');
 const { validateExamInput } = require('../validators/examValidator');
+const { isValidId } = require('../utils/validation');
 
 const getUserId = (req) => req.user?.userId;
 
@@ -28,6 +29,11 @@ const getExams = async (req, res) => {
     const usuarioId = getUserId(req);
     if (!usuarioId) return res.status(401).json({ message: 'No autorizado' });
 
+    if ((req.query.materiaId !== undefined && !isValidId(req.query.materiaId)) ||
+      (req.query.upcoming !== undefined && !['true', 'false'].includes(req.query.upcoming))) {
+      return res.status(400).json({ message: 'Los filtros de exámenes no son válidos' });
+    }
+
     const exams = await examService.getExams(usuarioId, {
       materiaId: req.query.materiaId,
       upcoming: req.query.upcoming === 'true',
@@ -43,6 +49,7 @@ const getExamById = async (req, res) => {
   try {
     const usuarioId = getUserId(req);
     if (!usuarioId) return res.status(401).json({ message: 'No autorizado' });
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'El id del examen no es válido' });
     const exam = await examService.getExamById(usuarioId, req.params.id);
     if (!exam) return res.status(404).json({ message: 'Examen no encontrado' });
     return res.status(200).json(exam);
@@ -56,6 +63,7 @@ const updateExam = async (req, res) => {
   try {
     const usuarioId = getUserId(req);
     if (!usuarioId) return res.status(401).json({ message: 'No autorizado' });
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'El id del examen no es válido' });
     const { titulo, fecha, descripcion } = req.body || {};
     const validationError = validateExamInput({ titulo, fecha, descripcion }, true);
     if (validationError) {
@@ -74,6 +82,7 @@ const deleteExam = async (req, res) => {
   try {
     const usuarioId = getUserId(req);
     if (!usuarioId) return res.status(401).json({ message: 'No autorizado' });
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'El id del examen no es válido' });
     const deleted = await examService.deleteExam(usuarioId, req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Examen no encontrado' });
     return res.status(200).json({ message: 'Examen eliminado correctamente' });

@@ -9,7 +9,8 @@ function validateExamInput({ materiaId, titulo, fecha, descripcion } = {}, isUpd
     return 'materiaId, titulo y fecha son obligatorios';
   }
 
-  if ((isUpdate && titulo !== undefined && !isNonEmptyString(titulo)) ||
+  if ((isUpdate && [titulo, fecha, descripcion].every((value) => value === undefined)) ||
+    (isUpdate && titulo !== undefined && !isNonEmptyString(titulo)) ||
     (isUpdate && fecha !== undefined && !isValidDate(fecha)) ||
     (descripcion !== undefined && descripcion !== null && !isNonEmptyString(descripcion))) {
     return isUpdate ? 'Los datos del examen no son válidos' : 'materiaId, titulo y fecha son obligatorios';

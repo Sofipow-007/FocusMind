@@ -13,6 +13,24 @@ import { getSubjects } from '../services/subjectService'
 import { formatDateTime } from '../utils/dates'
 import { subjectNameById } from '../utils/labels'
 
+function StudyPeriodSummary({ title, period }) {
+  return (
+    <section className="stack">
+      <h3>{title} ({period.inicio} – {period.fin})</h3>
+      <p>{period.totalMinutos} minutos en {period.totalSesiones} sesiones completadas.</p>
+      {period.porMateria.length > 0 ? (
+        <ul className="list">
+          {period.porMateria.map((item) => (
+            <li key={item.materiaId}>{item.materia}: {item.minutos} min ({item.sesiones} sesiones)</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">Sin sesiones completadas en este período.</p>
+      )}
+    </section>
+  )
+}
+
 function DashboardPage({ user, onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
@@ -55,8 +73,19 @@ function DashboardPage({ user, onNavigate }) {
 
       <section className="card stack">
         <h2 className="section-title">Tiempo de estudio</h2>
+        <p>
+          Racha actual: {stats?.rachaDias ?? 0} días.
+          {stats?.ultimoDiaEstudiado ? ` Último día de estudio: ${stats.ultimoDiaEstudiado}.` : ''}
+        </p>
+        {stats?.semanaActual ? (
+          <StudyPeriodSummary title="Esta semana" period={stats.semanaActual} />
+        ) : null}
+        {stats?.mesActual ? (
+          <StudyPeriodSummary title="Este mes" period={stats.mesActual} />
+        ) : null}
         {stats?.totalSesiones ? (
           <>
+            <h3>Histórico</h3>
             <p>{stats.totalMinutos} minutos en {stats.totalSesiones} sesiones completadas.</p>
             <ul className="list">
               {stats.porMateria.map((item) => (
@@ -66,7 +95,7 @@ function DashboardPage({ user, onNavigate }) {
           </>
         ) : (
           <EmptyState title="Todavía no hay estadísticas">
-            Completá una sesión de estudio para ver tus minutos por materia.
+            Completá una sesión de estudio para ver tu historial por materia.
           </EmptyState>
         )}
       </section>

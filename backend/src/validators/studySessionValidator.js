@@ -10,7 +10,8 @@ function validateStudySessionInput({ materiaId, fecha, duracion, descripcion, es
     return 'materiaId, fecha y duracion son obligatorios';
   }
 
-  if ((isUpdate && fecha !== undefined && !isValidDate(fecha)) ||
+  if ((isUpdate && [fecha, duracion, descripcion, estado].every((value) => value === undefined)) ||
+    (isUpdate && fecha !== undefined && !isValidDate(fecha)) ||
     (isUpdate && duracion !== undefined && !isPositiveInteger(duracion)) ||
     (descripcion !== undefined && descripcion !== null && !isNonEmptyString(descripcion)) ||
     (estado !== undefined && !SESSION_STATES.includes(estado))) {

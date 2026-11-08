@@ -1,9 +1,10 @@
 const subjectService = require('../services/subjectService');
 const { validateSubjectInput } = require('../validators/subjectValidator');
+const { validateSchedule, isValidId } = require('../utils/validation');
 
 const createSubject = async (req, res) => {
   try {
-    const { nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin } = req.body;
+    const { nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin } = req.body || {};
     const userId = req.user?.userId;
 
     if (!userId) {
@@ -57,6 +58,10 @@ const getSubjectById = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la materia no es válido' });
+    }
+
     const subject = await subjectService.getSubjectById(userId, id);
 
     if (!subject) {
@@ -74,10 +79,14 @@ const updateSubject = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.userId;
-    const { nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin } = req.body;
+    const { nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin } = req.body || {};
 
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
+    }
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la materia no es válido' });
     }
 
     const validationError = validateSubjectInput(
@@ -86,6 +95,23 @@ const updateSubject = async (req, res) => {
     );
     if (validationError) {
       return res.status(400).json({ message: validationError });
+    }
+
+    const hasScheduleUpdate = [diaEstudio, horaInicio, horaFin].some((value) => value !== undefined);
+    if (hasScheduleUpdate) {
+      const currentSubject = await subjectService.getSubjectById(userId, id);
+      if (!currentSubject) {
+        return res.status(404).json({ message: 'Materia no encontrada' });
+      }
+
+      const scheduleError = validateSchedule({
+        diaEstudio: diaEstudio !== undefined ? diaEstudio : currentSubject.diaEstudio,
+        horaInicio: horaInicio !== undefined ? horaInicio : currentSubject.horaInicio,
+        horaFin: horaFin !== undefined ? horaFin : currentSubject.horaFin,
+      });
+      if (scheduleError) {
+        return res.status(400).json({ message: scheduleError });
+      }
     }
 
     const subject = await subjectService.updateSubject(userId, id, {
@@ -115,6 +141,10 @@ const deleteSubject = async (req, res) => {
 
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
+    }
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la materia no es válido' });
     }
 
     const deleted = await subjectService.deleteSubject(userId, id);

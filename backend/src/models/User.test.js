@@ -1,16 +1,41 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { sequelize } = require('../config');
-const { User, Subject, StudySession, Note, Exam } = require('./index');
+const { randomUUID } = require('node:crypto');
+const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 
+const TEST_DATABASE_NAME = 'focusmind_test';
+if (process.env.DB_NAME && process.env.DB_NAME !== TEST_DATABASE_NAME) {
+  throw new Error(`Model tests require DB_NAME=${TEST_DATABASE_NAME}; refusing to use another database`);
+}
+process.env.NODE_ENV = 'test';
+process.env.DB_NAME = TEST_DATABASE_NAME;
+
+const { sequelize } = require('../config');
+const { User, Subject, StudySession, Note, Exam } = require('./index');
+const testEmails = [];
+
 test.after(async () => {
-  await sequelize.close();
+  try {
+    if (testEmails.length > 0) {
+      await User.destroy({ where: { email: { [Op.in]: testEmails } } });
+    }
+  } finally {
+    await sequelize.close();
+  }
 });
 
-// Limpieza de la BD antes de los tests
 async function setupDatabase() {
-  await sequelize.sync({ force: true });
+  if (sequelize.config.database !== TEST_DATABASE_NAME) {
+    throw new Error(`Model tests require the isolated database ${TEST_DATABASE_NAME}`);
+  }
+  await sequelize.sync();
+}
+
+function uniqueTestEmail(label) {
+  const email = `${label}-${randomUUID()}@example.com`;
+  testEmails.push(email);
+  return email;
 }
 
 // Test 1: Crear un usuario en la BD
@@ -19,15 +44,16 @@ test('Crear un usuario en la base de datos', { concurrency: false }, async () =>
 
   const password = 'test123secure';
   const passwordHash = await bcrypt.hash(password, 10);
+  const email = uniqueTestEmail('demo');
 
   const user = await User.create({
     nombre: 'Demo User',
-    email: 'demo@focusmind.com',
+    email,
     passwordHash,
   });
 
   assert.equal(user.nombre, 'Demo User');
-  assert.equal(user.email, 'demo@focusmind.com');
+  assert.equal(user.email, email);
   assert.ok(user.id);
 
 });
@@ -38,14 +64,15 @@ test('Buscar usuario por email', { concurrency: false }, async () => {
 
   const password = 'test123secure';
   const passwordHash = await bcrypt.hash(password, 10);
+  const email = uniqueTestEmail('search');
 
   await User.create({
     nombre: 'Search Test',
-    email: 'search@focusmind.com',
+    email,
     passwordHash,
   });
 
-  const foundUser = await User.findOne({ where: { email: 'search@focusmind.com' } });
+  const foundUser = await User.findOne({ where: { email } });
 
   assert.ok(foundUser);
   assert.equal(foundUser.nombre, 'Search Test');
@@ -58,16 +85,17 @@ test('No permite crear dos usuarios con el mismo email', { concurrency: false },
 
   const passwordHash = await bcrypt.hash('test123', 10);
 
+  const email = uniqueTestEmail('unique');
   await User.create({
     nombre: 'User 1',
-    email: 'unique@focusmind.com',
+    email,
     passwordHash,
   });
 
   try {
     await User.create({
       nombre: 'User 2',
-      email: 'unique@focusmind.com',
+      email,
       passwordHash,
     });
     assert.fail('Debería haber lanzado un error de unicidad');
@@ -94,8 +122,8 @@ test('un usuario no puede ver ni modificar datos de otro usuario', { concurrency
 
   const passwordHash = await bcrypt.hash('test123', 10);
 
-  const userA = await User.create({ nombre: 'Alice', email: 'alice@focusmind.com', passwordHash });
-  const userB = await User.create({ nombre: 'Bob', email: 'bob@focusmind.com', passwordHash });
+  const userA = await User.create({ nombre: 'Alice', email: uniqueTestEmail('alice'), passwordHash });
+  const userB = await User.create({ nombre: 'Bob', email: uniqueTestEmail('bob'), passwordHash });
 
   const subject = await Subject.create({
     usuarioId: userA.id,
@@ -131,7 +159,7 @@ test('la eliminación de un usuario elimina sus materias, sesiones, notas y exá
 
   const passwordHash = await bcrypt.hash('test123', 10);
 
-  const user = await User.create({ nombre: 'Owner', email: 'owner@focusmind.com', passwordHash });
+  const user = await User.create({ nombre: 'Owner', email: uniqueTestEmail('owner'), passwordHash });
 
   const subject = await Subject.create({
     usuarioId: user.id,

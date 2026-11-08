@@ -4,10 +4,17 @@ const {
   validateSchedule,
 } = require('../utils/validation');
 
-function validateSubjectInput({ nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin } = {}, isUpdate = false) {
-  const scheduleError = validateSchedule({ diaEstudio, horaInicio, horaFin });
+function validateSubjectInput(
+  { nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin } = {},
+  isUpdate = false,
+) {
+  const scheduleError = validateSchedule(
+    { diaEstudio, horaInicio, horaFin },
+    { partial: isUpdate },
+  );
 
-  if ((!isUpdate && !isNonEmptyString(nombre)) ||
+  if ((isUpdate && [nombre, favorita, prioritaria, diaEstudio, horaInicio, horaFin].every((value) => value === undefined)) ||
+    (!isUpdate && !isNonEmptyString(nombre)) ||
     (isUpdate && nombre !== undefined && !isNonEmptyString(nombre)) ||
     (favorita !== undefined && !isBoolean(favorita)) ||
     (prioritaria !== undefined && !isBoolean(prioritaria)) ||

@@ -18,7 +18,8 @@ function validateNoteInput({ materiaId, tipo, contenido, origen, estado } = {}) 
 }
 
 function validateNoteUpdateInput({ contenido, estado } = {}) {
-  if ((contenido !== undefined && !isNonEmptyString(contenido)) ||
+  if ([contenido, estado].every((value) => value === undefined) ||
+    (contenido !== undefined && !isNonEmptyString(contenido)) ||
     (estado !== undefined && !NOTE_STATES.includes(estado))) {
     return 'Los datos de la nota no son válidos';
   }

@@ -1,9 +1,10 @@
 const noteService = require('../services/noteService');
 const { validateNoteInput, validateNoteUpdateInput } = require('../validators/noteValidator');
+const { NOTE_TYPES, isValidId } = require('../utils/validation');
 
 const createNote = async (req, res) => {
   try {
-    const { materiaId, tipo, contenido, origen, estado } = req.body;
+    const { materiaId, tipo, contenido, origen, estado } = req.body || {};
     const userId = req.user?.userId;
 
     if (!userId) {
@@ -36,6 +37,11 @@ const getNotes = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
+    if ((materiaId !== undefined && !isValidId(materiaId)) ||
+      (tipo !== undefined && !NOTE_TYPES.includes(tipo))) {
+      return res.status(400).json({ message: 'Los filtros de notas no son válidos' });
+    }
+
     const notes = await noteService.getNotes(userId, { materiaId, tipo });
 
     return res.status(200).json(notes);
@@ -52,6 +58,10 @@ const getNoteById = async (req, res) => {
 
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
+    }
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la nota no es válido' });
     }
 
     const note = await noteService.getNoteById(userId, id);
@@ -71,10 +81,14 @@ const updateNote = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.userId;
-    const { contenido, estado } = req.body;
+    const { contenido, estado } = req.body || {};
 
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
+    }
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la nota no es válido' });
     }
 
     const validationError = validateNoteUpdateInput({ contenido, estado });
@@ -107,6 +121,10 @@ const deleteNote = async (req, res) => {
 
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
+    }
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la nota no es válido' });
     }
 
     const deleted = await noteService.deleteNote(userId, id);

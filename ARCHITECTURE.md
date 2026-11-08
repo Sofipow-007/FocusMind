@@ -6,7 +6,7 @@ Este documento describe la arquitectura implementada y las decisiones técnicas 
 
 FocusMind es una aplicación web full-stack para organizar materias, sesiones de estudio, notas, exámenes y estadísticas. El repositorio está organizado como un monorepo simple: API y SPA son proyectos independientes dentro de `backend/` y `frontend/`, sin workspaces ni código compartido.
 
-La Etapa 2 (persistencia MySQL y autenticación) figura como cerrada en `SPEC.md`. La Etapa 3 (funcionalidades principales) es el siguiente foco; la Etapa 4 (pulido final y contenerización completa) sigue pendiente. El alcance detallado y los criterios pendientes se mantienen en [TASKS.md](./TASKS.md).
+La Etapa 2 (persistencia MySQL y autenticación) figura como cerrada en `SPEC.md`. En la Etapa 3 ya están implementados y probados el CRUD base, las validaciones HTTP, el aislamiento de recursos y las estadísticas históricas/semanales/mensuales con racha. Quedan pendientes criterios y verificación completa de recordatorios y algunos eventos de calendario; la Etapa 4 (pulido final y contenerización completa) sigue pendiente. El alcance detallado se mantiene en [TASKS.md](./TASKS.md).
 
 ## 2. Mapa del repositorio
 
@@ -71,6 +71,8 @@ HTTP → routes → middleware/validators → controllers → services → model
 
 La API expone `GET /api/health`. Los recursos de dominio se montan en `/api/auth`, `/api/subjects`, `/api/study-sessions`, `/api/notes`, `/api/exams` y `/api/stats`.
 
+`GET /api/stats/study-time` conserva los agregados históricos, y devuelve agregaciones UTC del lunes-domingo actual y del mes calendario actual, con agrupación por materia y racha de sesiones completadas. El contrato completo está en la sección 7.2 de `SPEC.md`.
+
 ### Frontend
 
 El frontend es una SPA de React 19 compilada y servida con Vite, usando módulos ES. `main.jsx` monta React y `App.jsx` compone la experiencia. Las pantallas están en `pages/`, los elementos reutilizables en `components/`, y la lógica de comunicación HTTP en `services/`. La navegación actual se resuelve en React sin una dependencia de router.
@@ -126,7 +128,7 @@ npm run lint
 npm run test:storage
 ```
 
-Las pruebas de integración que requieran MySQL necesitan la base de datos de desarrollo levantada y las variables de entorno configuradas. No se debe inferir que el build de la interfaz prueba el funcionamiento de los flujos conectados a la API.
+`npm test` en el backend prepara y usa exclusivamente la base local `focusmind_test`; el runner fija `NODE_ENV=test`, crea esa base si no existe y nunca la reemplaza por `focusmind`. Las pruebas limpian sus fixtures y no usan `sequelize.sync({ force: true })`. El usuario configurado en `.env` debe poder crear la base de pruebas. No se debe inferir que el build de la interfaz prueba el funcionamiento de los flujos conectados a la API.
 
 ## 8. Documentos relacionados
 

@@ -40,16 +40,29 @@ Levanta el servidor en modo producción:
 npm start
 ```
 
+## Pruebas
+
+Ejecuta las pruebas unitarias y de integración:
+
+```bash
+npm test
+```
+
+El runner usa exclusivamente una base MySQL local llamada `focusmind_test` y la crea si no existe. El usuario configurado en `.env` debe tener permisos para crear bases de datos. Las pruebas no deben ejecutarse contra `focusmind` ni contra una base de producción.
+
 ## Estructura del proyecto
 
 ```
 src/
 ├── config/          # Configuración global (BD, JWT, etc.)
-├── controllers/     # Lógica de negocio (HTTP)
+├── controllers/     # Coordinación HTTP
 ├── middleware/      # Middleware personalizado (auth, validación, etc.)
+├── migrations/      # Cambios versionados del esquema
 ├── models/          # Modelos de Sequelize
 ├── routes/          # Definición de rutas
+├── services/        # Operaciones de dominio
 ├── utils/           # Utilidades compartidas
+├── validators/      # Validación de entradas
 ├── app.js           # Instancia de Express
 └── server.js        # Punto de entrada
 ```
@@ -68,8 +81,6 @@ src/
 | `JWT_SECRET` | Secreto para JWT | — |
 | `JWT_EXPIRES_IN` | Expiración JWT | `7d` |
 
-## Siguientes pasos
+## Estado actual
 
-- Etapa 2: Configurar Sequelize, modelos y autenticación (JWT + bcrypt)
-- Etapa 3: Implementar funcionalidades de negocio
-- Etapa 4: Dockerizar la aplicación
+Consultar [SPEC.md](../SPEC.md) para el estado normativo y [TASKS.md](../TASKS.md) para el backlog actualizado.

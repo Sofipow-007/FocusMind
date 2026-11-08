@@ -1,6 +1,6 @@
 # FocusMind — Especificación técnica
 
-> Estado actual: Etapa 2 avanzada. Backend con MySQL, modelos, autenticación JWT por cookie HttpOnly y CRUD inicial; frontend funcional y endurecimiento pendiente.
+> Estado actual: Etapa 3 en progreso. CRUD autenticado, validaciones base, estadísticas por semana/mes UTC y racha están implementados. Quedan por cerrar recordatorios, detalles del calendario y verificación integral de los flujos. El endurecimiento de autenticación sigue pendiente de revisión.
 
 ## 1. Descripción general
 
@@ -80,9 +80,9 @@ Este documento registra las decisiones técnicas tomadas en la etapa de scaffold
 
 | Capa          | Tecnología                  | Estado actual |
 | ------------- | --------------------------- | ----------------- |
-| Backend       | Node.js + Express           | ✅ API y CRUD inicial |
-| Frontend      | React + Vite                | ⚠️ Pantallas base (esqueleto) |
-| Base de datos | MySQL + Sequelize.js        | ✅ Conexion y modelos iniciales |
+| Backend       | Node.js + Express           | ✅ API autenticada, CRUD y estadísticas base |
+| Frontend      | React + Vite                | ✅ Flujos principales conectados; refinamiento pendiente |
+| Base de datos | MySQL + Sequelize.js        | ✅ Conexión, modelos y migraciones iniciales |
 | Autenticación | JWT + bcrypt                | ⚠️ Cookie HttpOnly implementada; pruebas y endurecimiento pendientes |
 | Contenedores  | Docker + Docker Compose     | ⚠️ MySQL en Compose; app pendiente |
 
@@ -312,16 +312,18 @@ npm run lint
 
 **Criterio de cierre:** la etapa 2 queda cerrada cuando el backend mantiene la autenticación y el acceso por usuario, con pruebas automatizadas y migraciones funcionales sobre MySQL.
 
-### Etapa 3 — Funcionalidades principales (siguiente paso)
+### Etapa 3 — Funcionalidades principales (en progreso)
 
-1. 🔜 Implementar y revisar la capa de servicios para materias, sesiones, notas y exámenes.
-2. 🔜 Completar la capa de validación para los flujos de negocio restantes.
-3. 🔜 Revisar y cerrar la lógica de estadísticas avanzadas por semana/mes.
-4. 🔜 Agregar racha y recordatorios de exámenes dentro de la lógica de negocio.
-5. 🔜 Definir el flujo concreto de calendario semanal y eventos recurrentes.
-6. 🔜 Implementar el frontend funcional para login/registro, dashboard, materias, sesiones, notas y calendario.
+1. ✅ Implementar servicios y CRUD autenticado para materias, sesiones, notas y exámenes.
+2. ✅ Implementar validaciones base y pruebas HTTP de CRUD, entradas inválidas y aislamiento por usuario.
+3. ✅ Agregar estadísticas históricas, semanales y mensuales agrupadas por materia.
+4. ✅ Calcular racha de días consecutivos usando sesiones completadas.
+5. 🔜 Definir el comportamiento completo de recordatorios de exámenes y cerrar su verificación.
+6. 🔜 Cerrar los criterios del calendario semanal, incluida la presencia de sesiones planificadas como eventos.
+7. ✅ Conectar los flujos principales de autenticación, dashboard, materias, sesiones, notas y calendario con la API.
+8. 🔜 Completar pruebas integradas de flujos y estados de interfaz.
 
-**Bloque actual:** la Etapa 2 queda cerrada y la Etapa 3 inicia con la consolidación de la lógica del negocio antes de completar la interfaz.
+**Bloque actual:** las tareas 3.1 y 3.2 del backlog están implementadas. El foco siguiente es acordar los criterios de recordatorios y eventos de calendario (3.3/3.4) y verificar los recorridos completos.
 
 ### Etapa 4 — Interfaz final y despliegue local (pendiente)
 
@@ -387,6 +389,24 @@ npm run lint
   - Acceso a `/api/auth/me` con cookie válida → devuelve datos del usuario.
   - Acceso a ruta protegida sin cookie o con cookie inválida/expirada → `401`
   - Logout → cookie invalidada, siguiente acceso a `/api/auth/me` devuelve `401`.
+
+### 7.2 Contrato de estadísticas de estudio para Etapa 3
+
+El endpoint autenticado `GET /api/stats/study-time` devuelve estadísticas del usuario actual. Solo se consideran sesiones con estado `completada`. Las duraciones se expresan en minutos y las fechas para agrupar períodos se interpretan en UTC.
+
+- Se conservan los campos históricos existentes:
+  - `totalMinutos`: minutos completados de todo el historial.
+  - `totalSesiones`: cantidad de sesiones completadas de todo el historial.
+  - `porMateria`: agregación histórica con `materiaId`, `materia`, `sesiones` y `minutos`.
+- Se agregan `semanaActual` y `mesActual`, cada uno con:
+  - `inicio` y `fin` como fechas ISO 8601 `YYYY-MM-DD`, ambos límites inclusivos.
+  - `totalMinutos`, `totalSesiones` y `porMateria` con la misma estructura que el historial.
+- La semana calendario comienza el lunes UTC y termina el domingo UTC.
+- El mes calendario comienza el día 1 UTC y termina el último día UTC del mes actual.
+- `rachaDias` cuenta días UTC distintos consecutivos con al menos una sesión completada. La racha vigente se ancla en hoy si hubo estudio hoy; si no, en ayer. Si no hubo estudio hoy ni ayer, vale cero. Las sesiones futuras no extienden la racha.
+- `ultimoDiaEstudiado` es la fecha ISO UTC más reciente que no sea futura, o `null` cuando no existe.
+- Si no hay sesiones completadas, los totales son cero, `porMateria` está vacío, `rachaDias` vale cero y `ultimoDiaEstudiado` es `null`.
+- La autenticación y el filtro por propietario siguen siendo obligatorios; el token no forma parte de la respuesta.
 
 
 

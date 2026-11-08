@@ -1,9 +1,10 @@
 const studySessionService = require('../services/studySessionService');
 const { validateStudySessionInput } = require('../validators/studySessionValidator');
+const { isValidId } = require('../utils/validation');
 
 const createStudySession = async (req, res) => {
   try {
-    const { materiaId, fecha, duracion, descripcion, estado } = req.body;
+    const { materiaId, fecha, duracion, descripcion, estado } = req.body || {};
     const userId = req.user?.userId;
 
     if (!userId) {
@@ -43,6 +44,10 @@ const getStudySessions = async (req, res) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
+    if (materiaId !== undefined && !isValidId(materiaId)) {
+      return res.status(400).json({ message: 'El filtro materiaId no es válido' });
+    }
+
     const sessions = await studySessionService.getStudySessions(userId, materiaId);
 
     return res.status(200).json(sessions);
@@ -59,6 +64,10 @@ const getStudySessionById = async (req, res) => {
 
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
+    }
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la sesión no es válido' });
     }
 
     const session = await studySessionService.getStudySessionById(userId, id);
@@ -78,10 +87,14 @@ const updateStudySession = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.userId;
-    const { fecha, duracion, descripcion, estado } = req.body;
+    const { fecha, duracion, descripcion, estado } = req.body || {};
 
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
+    }
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la sesión no es válido' });
     }
 
     const validationError = validateStudySessionInput(
@@ -117,6 +130,10 @@ const deleteStudySession = async (req, res) => {
 
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
+    }
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ message: 'El id de la sesión no es válido' });
     }
 
     const deleted = await studySessionService.deleteStudySession(userId, id);
