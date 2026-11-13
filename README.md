@@ -1,6 +1,6 @@
-# FocusMind
+![Banner](./docs/resources/FocusMind_Banner.png)
 
-Aplicación que permitir que los estudiantes de secundaria/universidad organicen sus sesiones de estudio por materia, visualizar su constancia, recibir recordatorios de exámenes próximos, tomar cualquier tipo de nota para cada materia (apunte, consulta, definición) y fijar las materias en un calendario semanal
+FocusMind es una aplicación web para que estudiantes de nivel secundario y universitario organicen su estudio. Permite gestionar materias, registrar sesiones, planificar horarios semanales, tomar notas y consultas, y llevar un seguimiento de exámenes próximos, rachas y estadísticas de estudio.
 
 ## Inicio rápido
 
